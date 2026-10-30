@@ -13,6 +13,12 @@
      A            LINENO         9P 0       COLHDG('明細' '行番号')
      A                                      TEXT('明細行番号')
      A*
+     A* 受注・出荷参照
+     A            SOID          18P 0       COLHDG('受注ID')
+     A                                      TEXT('受注ID')
+     A            SHPID         18P 0       COLHDG('出荷ID')
+     A                                      TEXT('出荷ID')
+     A*
      A* 商品情報
      A            ITEMID         9P 0       COLHDG('商品ID')
      A                                      TEXT('商品ID')
@@ -32,3 +38,4 @@
      A* キー定義
      A          K INVID
      A          K LINENO
+

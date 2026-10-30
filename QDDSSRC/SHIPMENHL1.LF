@@ -1,0 +1,6 @@
+     A*論理ファイル: SHIPMENHL1 (出荷ヘッダ - SOID順)
+     A*ベースファイル: SHIPMENTHP
+     A*目的: SOID をキーにして SHPID を取得する
+     A          R SHPREC                    PFILE(SHIPMENTHP)
+     A          K SOID
+

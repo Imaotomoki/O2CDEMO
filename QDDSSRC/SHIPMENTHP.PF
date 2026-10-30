@@ -22,7 +22,7 @@
      A                                      TEXT('出荷倉庫ID')
      A*
      A* 出荷情報
-     A            SHPDATE        8S 0       COLHDG('出荷日')
+     A            SHPDATE        8P 0       COLHDG('出荷日')
      A                                      TEXT('出荷日')
      A            CARRIER       60O         COLHDG('輸送業者')
      A                                      TEXT('輸送業者')
@@ -36,16 +36,17 @@
      A* 監査情報
      A            CRTUSER       30O         COLHDG('作成者')
      A                                      TEXT('作成ユーザー')
-     A            CRTDATE        8S 0       COLHDG('作成日')
+     A            CRTDATE        8P 0       COLHDG('作成日')
      A                                      TEXT('作成日付')
-     A            CRTTIM         6S 0       COLHDG('作成時刻')
+     A            CRTTIM         6P 0       COLHDG('作成時刻')
      A                                      TEXT('作成時刻')
      A            UPDUSER       30O         COLHDG('更新者')
      A                                      TEXT('更新ユーザー')
-     A            UPDDATE        8S 0       COLHDG('更新日')
+     A            UPDDATE        8P 0       COLHDG('更新日')
      A                                      TEXT('更新日付')
-     A            UPDTIM         6S 0       COLHDG('更新時刻')
+     A            UPDTIM         6P 0       COLHDG('更新時刻')
      A                                      TEXT('更新時刻')
      A*
      A* キー定義
      A          K SHPID
+

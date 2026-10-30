@@ -1,46 +1,58 @@
-     A*=========================================================
+     A*==========================================================
+     A* Mod#MSG: ERRMSGキーワード(エラー行/キーボードロック)を廃止し
+     A*          DSPATR(RI PC)+ERRMSG項目で表示(全角の文字化け対策)
      A* ORDENTRYD - 受注入力画面 DSPF
-     A* 修正#18: TOTAL行を列ヘッダー上に移動
-     A*           TOTAMT_D 15Y0O(整数) / FK日本語化
-     A*=========================================================
+     A* Mod#UI: 日本語化・5=削除・区切り線拡張・1=選択
+     A*==========================================================
      A                                      DSPSIZ(24 80 *DS3)
      A                                      CA03(03 'F3=End')
+     A* 修正#F4P: CF04(F4でも入力を返す。カーソル位置で検索先を決める)
+     A                                      CF04(04 'F4=Srch')
      A                                      CA06(06 'F6=Reg')
      A                                      CA12(12 'F12=Bk')
      A                                      PRINT
      A                                      ERRSFL
      A*
-     A*---------------------------------------------------------
-     A* DETAIL - 明細SFL(行22-23 SFLPAG=2)
-     A*---------------------------------------------------------
+     A*----------------------------------------------------------
+     A* DETAIL - SFL (row 19-22, SFLPAG=4)
+     A*----------------------------------------------------------
      A          R DETAIL                    SFL
-     A            LINENO         2S 0O 22  2COLOR(GRN)
-     A            ITEMCD        12A  B 22  5DSPATR(UL)
+     A* Mod#C: エラー行/F4選択行を次回READCの対象にする
+     A  44                                  SFLNXTCHG
+     A            DLTOPT         1A  B 19  2DSPATR(UL)
+     A                                      VALUES(' ' '5')
+     A            LINENO         2S 0O 19  3COLOR(GRN)
+     A            ITEMCD        12A  B 19  6DSPATR(UL)
      A  41                                  DSPATR(RI)
      A                                      COLOR(WHT)
-     A            ITEMNM        22A  O 22 18COLOR(BLU)
-     A            ORDQTY         7S 0B 22 42DSPATR(UL)
+     A            ITEMNM        22A  O 19 19COLOR(BLU)
+     A            ORDQTY         7S 0B 19 43DSPATR(UL)
      A                                      COLOR(GRN)
-     A            UNITPRC       13S 0B 22 51DSPATR(UL)
+     A* 修正#PRC: 単価は文字で入力(円は整数、外貨は小数2桁まで)
+     A            UPRC_A        14A  B 19 52DSPATR(UL)
      A                                      COLOR(GRN)
+     A  43                                  DSPATR(RI)
      A*
-     A*---------------------------------------------------------
-     A* DETAILCTL - SFL制御
-     A*---------------------------------------------------------
+     A*----------------------------------------------------------
+     A* DETAILCTL - SFL CTL
+     A* SFLPAG=4, SFLrow=19, height check: 19+4-1=22 < 24 OK
+     A*----------------------------------------------------------
      A          R DETAILCTL                 SFLCTL(DETAIL)
      A                                      SFLSIZ(0020)
-     A                                      SFLPAG(0002)
+     A                                      SFLPAG(0004)
+     A                                      OVERLAY
      A  91                                  SFLDSP
      A  92                                  SFLDSPCTL
      A  93                                  SFLCLR
-     A  94                                  SFLEND(*MORE)
      A            SFLRRN         4S 0H
      A                                  1  2'受注入力'
      A                                      DSPATR(HI)
-     A                                  1 70DATE(*JOB)
+     A                                  1 70DATE(*SYS)
      A                                      EDTCDE(Y)
      A                                  2 70TIME
-     A                                  3  2'=============================='
+     A                                  3  2'==================================+
+     A                                      ===================================+
+     A                                      ========='
      A                                  5  2'顧客コード:'
      A                                  7  2'受注日    :'
      A                                  8  2'希望納期  :'
@@ -55,85 +67,113 @@
      A            PAYTERM_D     20A  O 10 16COLOR(TRQ)
      A            WHID_D         4S 0O 11 16COLOR(TRQ)
      A            WHNM_D        35A  O 12 16COLOR(TRQ)
-     A                                 14  2'=============================='
-     A                                 15  2'合計金額  :'
+     A                                 13  2'==================================+
+     A                                      ===================================+
+     A                                      ========='
+     A                                 14  2'合計金額  :'
      A                                      COLOR(GRN)
-     A            TOTAMT_D      15Y 0O 15 16EDTCDE(1)
+     A* Mod#YEN: 円は小数なしで表示
+     A* 修正#CUR: 46=外貨(小数2桁と通貨コード) N46=円
+     A N46        TOTAMT_D      13Y 0O 14 16EDTCDE(1)
      A                                      COLOR(TRQ)
      A                                      DSPATR(HI)
-     A                                 15 33'円'
+     A N46                             14 36'円'
      A                                      COLOR(GRN)
-     A                                 16  2'=============================='
-     A                                 17  2'No'
-     A                                 17  5'商品CD'
-     A                                 17 18'商品名'
-     A                                 17 42'数量'
-     A                                 17 51'単価'
-     A                                 18  2'=============================='
-     A            ERRMSG_D      50A  O 19  2DSPATR(HI)
+     A* 外貨の合計はRPGで編集した文字(0を0.00と表示するため)
+     A  46        TOTAMT_DF     17A  O 14 16
+     A                                      COLOR(TRQ)
+     A                                      DSPATR(HI)
+     A  46        CUR_T          3A  O 14 36COLOR(GRN)
+     A                                 15  2'==================================+
+     A                                      ===================================+
+     A                                      ========='
+     A            ERRMSG_D      50A  O 16  2DSPATR(HI)
      A                                      COLOR(RED)
-     A                                 20  2'F3=終了 F6=登録 F12=戻る'
+     A                                 17  2'No'
+     A                                 17  7'商品CD'
+     A                                 17 20'商品名'
+     A                                 17 44'数量'
+     A                                 17 53'単価'
+     A                                 18  2'==================================+
+     A                                      ===================================+
+     A                                      ========='
+     A*
+     A*----------------------------------------------------------
+     A* DETAILKEY - Key guide row 23 (OVERLAY+ASSUME)
+     A* ASSUME: ファイルオープン後の最初のWRITE後も表示維持
+     A* DETAILCTL SFLCLR後にWRITE→EXFMT DETAILCTL(OVERLAY)で保持
+     A*----------------------------------------------------------
+     A          R DETAILKEY                 OVERLAY
+     A                                      ASSUME
+     A                                 23  2'F3=終了  F4=検索'
+     A                                      COLOR(TRQ)
+     A                                 23 26'F6=登録  F12=戻る'
+     A                                      COLOR(TRQ)
+     A                                 23 52'5=行削除'
      A                                      COLOR(TRQ)
      A*
-     A*---------------------------------------------------------
-     A* HEADER - ヘッダー入力
-     A*---------------------------------------------------------
+     A*----------------------------------------------------------
+     A* HEADER - Header input
+     A*----------------------------------------------------------
      A          R HEADER
+     A* 修正#F4P: F4を押した時のカーソルの項目名を返す
+     A                                      RTNCSRLOC(&CSRRCD &CSRFLD)
+     A            CSRRCD        10A  H
+     A            CSRFLD        10A  H
      A                                  1  2'受注入力'
      A                                      DSPATR(HI)
-     A                                  1 70DATE(*JOB)
+     A                                  1 70DATE(*SYS)
      A                                      EDTCDE(Y)
      A                                  2 70TIME
-     A                                  3  2'=============================='
+     A                                  3  2'==================================+
+     A                                      ===================================+
+     A                                      ========='
      A                                  5  2'顧客コード:'
      A            CUSTCD        20A  B  5 16DSPATR(UL)
      A                                      DSPATR(MDT)
-     A  31                              5 37'見つかりません'
-     A                                      DSPATR(HI)
-     A                                      COLOR(RED)
+     A  31                                  DSPATR(RI PC)
      A            CUSTNM        40A  O  6 16DSPATR(HI)
      A                                      COLOR(TRQ)
      A                                  7  2'受注日    :'
      A            ORDDATE        8A  B  7 16DSPATR(UL)
-     A  32                              7 37'日付エラー'
-     A                                      DSPATR(HI)
-     A                                      COLOR(RED)
+     A  32                                  DSPATR(RI PC)
      A                                  8  2'希望納期  :'
      A            REQDATE        8A  B  8 16DSPATR(UL)
-     A  33                              8 37'納期エラー'
-     A                                      DSPATR(HI)
-     A                                      COLOR(RED)
+     A  33                                  DSPATR(RI PC)
      A                                  9  2'通貨      :'
      A            CURRCD         3A  B  9 16DSPATR(UL)
-     A  34                              9 37'通貨コードエラー'
-     A                                      DSPATR(HI)
-     A                                      COLOR(RED)
+     A  34                                  DSPATR(RI PC)
      A                                 10  2'支払条件  :'
      A            PAYTERM       20A  B 10 16DSPATR(UL)
+     A* 修正#F4P: 支払条件の入力エラー
+     A  36                                  DSPATR(RI PC)
      A                                 11  2'倉庫ID    :'
      A            WHID           4S 0B 11 16DSPATR(UL)
-     A  35                             11 37'倉庫なし'
-     A                                      DSPATR(HI)
-     A                                      COLOR(RED)
+     A  35                                  DSPATR(RI PC)
      A            WHNM          35A  O 12 16DSPATR(HI)
      A                                      COLOR(TRQ)
-     A                                 14  2'=============================='
-     A                                 19  2'F3=終了 F12=取消 Enter=表示'
+     A                                 14  2'==================================+
+     A                                      ===================================+
+     A                                      ========='
+     A                                 19  2'F3=終了 F4=検索 F12=戻る'
+     A                                      COLOR(TRQ)
+     A                                 19 30'Enter=次へ'
      A                                      COLOR(TRQ)
      A            ERRMSG        78A  O 24  2DSPATR(HI)
      A                                      COLOR(RED)
      A*
-     A*---------------------------------------------------------
-     A* CONFIRM - 確認画面(OVERLAY)
-     A*---------------------------------------------------------
-     A          R CONFIRM
-     A                                      OVERLAY
+     A*----------------------------------------------------------
+     A* CONFIRM - Confirm screen (OVERLAY)
+     A*----------------------------------------------------------
+     A          R CONFIRM                   OVERLAY
      A                                  1  2'受注入力 - 確認'
      A                                      DSPATR(HI)
-     A                                  1 70DATE(*JOB)
+     A                                  1 70DATE(*SYS)
      A                                      EDTCDE(Y)
      A                                  2 70TIME
-     A                                  3  2'=============================='
+     A                                  3  2'==================================+
+     A                                      ===================================+
+     A                                      ========='
      A                                  5  2'顧客コード:'
      A                                  7  2'受注日    :'
      A                                  8  2'希望納期  :'
@@ -148,29 +188,131 @@
      A            PAYTERM_C     20A  O 10 16COLOR(TRQ)
      A            WHID_C         4S 0O 11 16COLOR(TRQ)
      A            WHNM_C        35A  O 12 16COLOR(TRQ)
-     A                                 14  2'=============================='
+     A                                 14  2'==================================+
+     A                                      ===================================+
+     A                                      ========='
      A                                 15  2'この内容で登録しますか?'
      A                                      DSPATR(HI)
      A                                 16  2'合計金額  :'
      A                                      COLOR(GRN)
-     A            TOTAMT        15Y 0O 16 16EDTCDE(1)
+     A* 修正#CUR: 46=外貨(小数2桁と通貨コード) N46=円
+     A N46        TOTAMT        13Y 0O 16 16EDTCDE(1)
      A                                      COLOR(TRQ)
      A                                      DSPATR(HI)
-     A                                 16 33'円'
+     A N46                             16 36'円'
      A                                      COLOR(GRN)
-     A                                 23  2'Enter=登録 F12=明細へ戻る'
+     A* 外貨の合計はRPGで編集した文字(0を0.00と表示するため)
+     A  46        TOTAMT_F      17A  O 16 16
+     A                                      COLOR(TRQ)
+     A                                      DSPATR(HI)
+     A  46        CUR_T          3A  O 16 36COLOR(GRN)
+     A                                 23  2'Enter=登録'
+     A                                      COLOR(TRQ)
+     A                                 23 14'F12=明細へ戻る'
      A                                      COLOR(TRQ)
      A*
-     A*---------------------------------------------------------
-     A* COMPLETE - 完了画面(OVERLAY 行23-24)
-     A*---------------------------------------------------------
-     A          R COMPLETE
-     A                                      OVERLAY
+     A*----------------------------------------------------------
+     A* COMPLETE - Complete screen (OVERLAY)
+     A*----------------------------------------------------------
+     A          R COMPLETE                  OVERLAY
      A                                 23  2'受注登録が完了しました'
      A                                      DSPATR(HI)
      A                                      COLOR(GRN)
      A                                 24  2'受注番号  :'
      A            SONUM         20A  O 24 16DSPATR(HI)
-     A                                 23 40'Enter=続けて入力 F3=終了'
+     A                                 23 38'Enter=継続'
      A                                      COLOR(TRQ)
+     A* Mod#O: 左の'Enter=継続'と重なっていたため右へ
+     A                                 23 52'F3=終了'
+     A                                      COLOR(TRQ)
+     A*
+     A*----------------------------------------------------------
+     A* CUSTSFL - Customer search subfile
+     A* SFL row=4, SFLPAG=6
+     A* WINDOW(3 2 10 68): SFLrow(4)+SFLPAG(6)-1=9 < 10 OK
+     A*----------------------------------------------------------
+     A          R CUSTSFL                   SFL
+     A            CSFOPT         1A  B  4  2DSPATR(UL)
+     A                                      VALUES(' ' '1')
+     A            CSFCD         20A  O  4  6COLOR(GRN)
+     A            CSFNM         24A  O  4 28COLOR(TRQ)
+     A*----------------------------------------------------------
+     A* CUSTSFLCTL - Customer search SFL control
+     A*----------------------------------------------------------
+     A          R CUSTSFLCTL                SFLCTL(CUSTSFL)
+     A                                      SFLSIZ(0020)
+     A                                      SFLPAG(0006)
+     A                                      WINDOW(3 2 10 68)
+     A                                      OVERLAY
+     A  71                                  SFLDSP
+     A  72                                  SFLDSPCTL
+     A  73                                  SFLCLR
+     A            CSFRRN         4S 0H
+     A                                  1  2'顧客検索'
+     A                                      DSPATR(HI)
+     A                                  2  2'F12=戻る  1=選択'
+     A                                      COLOR(TRQ)
+     A                                  3  2'顧客コード'
+     A                                  3 28'顧客名'
+     A*----------------------------------------------------------
+     A* WHSFL - Warehouse search subfile
+     A* SFL row=4, SFLPAG=4
+     A* WINDOW(8 2 8 68): SFLrow(4)+SFLPAG(4)-1=7 < 8 OK
+     A*----------------------------------------------------------
+     A          R WHSFL                     SFL
+     A            WSFOPT         1A  B  4  2DSPATR(UL)
+     A                                      VALUES(' ' '1')
+     A            WSFID          4A  O  4  6COLOR(GRN)
+     A            WSFCD         10A  O  4 12COLOR(GRN)
+     A            WSFNM         35A  O  4 24COLOR(TRQ)
+     A*----------------------------------------------------------
+     A* WHSFLCTL - Warehouse search SFL control
+     A*----------------------------------------------------------
+     A          R WHSFLCTL                  SFLCTL(WHSFL)
+     A                                      SFLSIZ(0020)
+     A                                      SFLPAG(0004)
+     A                                      WINDOW(8 2 8 68)
+     A                                      OVERLAY
+     A  74                                  SFLDSP
+     A  75                                  SFLDSPCTL
+     A  76                                  SFLCLR
+     A            WSFRRN         4S 0H
+     A                                  1  2'倉庫検索'
+     A                                      DSPATR(HI)
+     A                                  2  2'F12=戻る  1=選択'
+     A                                      COLOR(TRQ)
+     A                                  3  6'ID'
+     A                                  3 12'倉庫CD'
+     A                                  3 24'倉庫名'
+     A*----------------------------------------------------------
+     A* ITMSFL - Item search subfile
+     A* SFL row=4, SFLPAG=6
+     A* WINDOW(3 2 10 68): SFLrow(4)+SFLPAG(6)-1=9 < 10 OK
+     A*----------------------------------------------------------
+     A          R ITMSFL                    SFL
+     A            ISFOPT         1A  B  4  2DSPATR(UL)
+     A                                      VALUES(' ' '1')
+     A            ISFCD         12A  O  4  6COLOR(GRN)
+     A            ISFNM         20A  O  4 20COLOR(TRQ)
+     A            ISFQTY        15Y 0O  4 42EDTCDE(Z)
+     A                                      COLOR(BLU)
+     A*----------------------------------------------------------
+     A* ITMSFLCTL - Item search SFL control
+     A*----------------------------------------------------------
+     A          R ITMSFLCTL                 SFLCTL(ITMSFL)
+     A                                      SFLSIZ(0020)
+     A                                      SFLPAG(0006)
+     A                                      WINDOW(3 2 10 68)
+     A                                      OVERLAY
+     A  77                                  SFLDSP
+     A  78                                  SFLDSPCTL
+     A  79                                  SFLCLR
+     A            ISFRRN         4S 0H
+     A                                  1  2'商品検索'
+     A                                      DSPATR(HI)
+     A                                  2  2'F12=戻る  1=選択'
+     A                                      COLOR(TRQ)
+     A                                  3  2'商品CD'
+     A                                  3 20'商品名'
+     A                                  3 42'引当可能'
 

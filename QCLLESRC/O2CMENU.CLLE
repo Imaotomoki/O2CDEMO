@@ -1,0 +1,171 @@
+/*=================================================================*/
+/* プログラム: O2CMENU                                             */
+/* 概要  : 販売管理(受注から入金まで)のメニュー                     */
+/* 修正#MNU: 新規作成                                               */
+/*   番号を選んでEnterで各処理を呼び出す。F3で終了                  */
+/* 修正#LIB: ライブラリー名を書かない。呼び出しスタック(QWVRCSTK)  */
+/*   から自分のライブラリーを調べてライブラリーリストに追加する     */
+/* 修正#F4P: F4で請求番号を一覧から選べるようにした                 */
+/*   呼び出した処理でエラーが起きてもメニューは止めず、             */
+/*   メッセージ行に表示する                                         */
+/* 修正#INQ: 5番を請求書の照会(INVINQ)に変更。印刷は照会画面のF6   */
+/*=================================================================*/
+             PGM
+
+             DCLF       FILE(O2CMNUD)
+             DCL        VAR(&PGM) TYPE(*CHAR) LEN(10)
+/* 修正#F4P: 共通の検索ウィンドウ(O2CPRMPT)のパラメーター           */
+             DCL        VAR(&PTYPE) TYPE(*CHAR) LEN(10) VALUE('INV')
+             DCL        VAR(&PCDTYPE) TYPE(*CHAR) LEN(30) VALUE(' ')
+             DCL        VAR(&PVAL) TYPE(*CHAR) LEN(30)
+/* 修正#LIB: 呼び出しスタックの取得(QWVRCSTK)用                     */
+             DCL        VAR(&RCV) TYPE(*CHAR) LEN(16000)
+             DCL        VAR(&RCVLEN) TYPE(*INT) LEN(4) VALUE(16000)
+             DCL        VAR(&JIDF) TYPE(*CHAR) LEN(56)
+             DCL        VAR(&ERRC) TYPE(*CHAR) LEN(8) +
+                          VALUE(X'0000000000000000')
+             DCL        VAR(&CNT) TYPE(*INT) LEN(4)
+             DCL        VAR(&OFS) TYPE(*INT) LEN(4)
+             DCL        VAR(&ELEN) TYPE(*INT) LEN(4)
+             DCL        VAR(&POS) TYPE(*INT) LEN(4)
+             DCL        VAR(&I) TYPE(*INT) LEN(4)
+             DCL        VAR(&MYLIB) TYPE(*CHAR) LEN(10) VALUE(' ')
+
+/* 修正#LIB: 自分(O2CMENU)の呼び出しスタック項目からライブラリーを  */
+/*   取り、ライブラリーリストに追加する(見つからなければそのまま)   */
+/*   JIDF0100: ジョブ名*=自分のジョブ、スレッド指示1=現行スレッド  */
+             CHGVAR     VAR(%SST(&JIDF 1 10)) VALUE('*')
+             CHGVAR     VAR(%SST(&JIDF 43 2)) VALUE(X'0000')
+             CHGVAR     VAR(%BIN(&JIDF 45 4)) VALUE(1)
+             CHGVAR     VAR(%SST(&JIDF 49 8)) +
+                          VALUE(X'0000000000000000')
+             CALL       PGM(QSYS/QWVRCSTK) PARM(&RCV &RCVLEN +
+                          'CSTK0100' &JIDF 'JIDF0100' &ERRC)
+             MONMSG     MSGID(CPF0000) EXEC(GOTO CMDLBL(ADDLIB))
+/*   ヘッダー: 13桁目=最初の項目への変位、17桁目=返された項目数     */
+             CHGVAR     VAR(&OFS) VALUE(%BIN(&RCV 13 4))
+             CHGVAR     VAR(&CNT) VALUE(%BIN(&RCV 17 4))
+             CHGVAR     VAR(&I) VALUE(1)
+ STKLOOP:
+             IF         COND(&I *GT &CNT) THEN(GOTO CMDLBL(ADDLIB))
+/*   項目の 1 桁目=項目の長さ、25 桁目=プログラム名、              */
+/*   35 桁目=ライブラリー                                          */
+             CHGVAR     VAR(&POS) VALUE(&OFS + 25)
+             IF         COND(%SST(&RCV &POS 10) *EQ 'O2CMENU') +
+                          THEN(DO)
+             CHGVAR     VAR(&POS) VALUE(&OFS + 35)
+             CHGVAR     VAR(&MYLIB) VALUE(%SST(&RCV &POS 10))
+             GOTO       CMDLBL(ADDLIB)
+             ENDDO
+             CHGVAR     VAR(&POS) VALUE(&OFS + 1)
+             CHGVAR     VAR(&ELEN) VALUE(%BIN(&RCV &POS 4))
+             IF         COND(&ELEN *LE 0) THEN(GOTO CMDLBL(ADDLIB))
+             CHGVAR     VAR(&OFS) VALUE(&OFS + &ELEN)
+             CHGVAR     VAR(&I) VALUE(&I + 1)
+             GOTO       CMDLBL(STKLOOP)
+ ADDLIB:
+             IF         COND(&MYLIB *NE ' ') THEN(DO)
+             ADDLIBLE   LIB(&MYLIB)
+             MONMSG     MSGID(CPF2103)
+             ENDDO
+
+             CHGVAR     VAR(&MMSG) VALUE(' ')
+
+ LOOP:
+             SNDRCVF    RCDFMT(MENU)
+             IF         COND(&IN03) THEN(GOTO CMDLBL(ENDPGM))
+/* 修正#F4P: F4=請求番号の検索。選んだら選択を5(照会)にする         */
+             IF         COND(&IN04) THEN(DO)
+             CHGVAR     VAR(&PVAL) VALUE(&MINVNUM)
+             CALL       PGM(O2CPRMPT) PARM(&PTYPE &PCDTYPE &PVAL)
+             MONMSG     MSGID(CPF0000)
+             IF         COND(%SST(&PVAL 1 20) *NE &MINVNUM) THEN(DO)
+             CHGVAR     VAR(&MINVNUM) VALUE(%SST(&PVAL 1 20))
+             CHGVAR     VAR(&MOPT) VALUE('5')
+             ENDDO
+             CHGVAR     VAR(&MMSG) VALUE(' ')
+             GOTO       CMDLBL(LOOP)
+             ENDDO
+             CHGVAR     VAR(&IN40) VALUE('0')
+             CHGVAR     VAR(&IN41) VALUE('0')
+             CHGVAR     VAR(&MMSG) VALUE(' ')
+             CHGVAR     VAR(&PGM) VALUE(' ')
+
+/* 1桁で入力しても2桁で入力しても同じに扱う                         */
+             IF         COND(&MOPT *EQ ' 1' *OR &MOPT *EQ '1 ' +
+                          *OR &MOPT *EQ '01') +
+                          THEN(CHGVAR VAR(&PGM) VALUE('ORDERENTRY'))
+             IF         COND(&MOPT *EQ ' 2' *OR &MOPT *EQ '2 ' +
+                          *OR &MOPT *EQ '02') +
+                          THEN(CHGVAR VAR(&PGM) VALUE('ORDMAINT'))
+             IF         COND(&MOPT *EQ ' 3' *OR &MOPT *EQ '3 ' +
+                          *OR &MOPT *EQ '03') +
+                          THEN(CHGVAR VAR(&PGM) VALUE('CNFSHPENT'))
+             IF         COND(&MOPT *EQ ' 4' *OR &MOPT *EQ '4 ' +
+                          *OR &MOPT *EQ '04') +
+                          THEN(CHGVAR VAR(&PGM) VALUE('STKMAINT'))
+             IF         COND(&MOPT *EQ ' 5' *OR &MOPT *EQ '5 ' +
+                          *OR &MOPT *EQ '05') +
+                          THEN(CHGVAR VAR(&PGM) VALUE('INVINQ'))
+             IF         COND(&MOPT *EQ ' 6' *OR &MOPT *EQ '6 ' +
+                          *OR &MOPT *EQ '06') +
+                          THEN(CHGVAR VAR(&PGM) VALUE('BILLCLOSE'))
+             IF         COND(&MOPT *EQ ' 7' *OR &MOPT *EQ '7 ' +
+                          *OR &MOPT *EQ '07') +
+                          THEN(CHGVAR VAR(&PGM) VALUE('PAYENTRY'))
+             IF         COND(&MOPT *EQ ' 8' *OR &MOPT *EQ '8 ' +
+                          *OR &MOPT *EQ '08') +
+                          THEN(CHGVAR VAR(&PGM) VALUE('ARAGING'))
+             IF         COND(&MOPT *EQ ' 9' *OR &MOPT *EQ '9 ' +
+                          *OR &MOPT *EQ '09') +
+                          THEN(CHGVAR VAR(&PGM) VALUE('DUNNING'))
+/* 修正#PCN: 10=入金取消                                            */
+             IF         COND(&MOPT *EQ '10') +
+                          THEN(CHGVAR VAR(&PGM) VALUE('PAYCANCEL'))
+/* 修正#SCN: 11=出荷取消                                            */
+             IF         COND(&MOPT *EQ '11') +
+                          THEN(CHGVAR VAR(&PGM) VALUE('SHPCANCEL'))
+/* 修正#INQ2: 12=在庫照会 13=売上・入金の月次集計 14=顧客の与信    */
+             IF         COND(&MOPT *EQ '12') +
+                          THEN(CHGVAR VAR(&PGM) VALUE('STKINQ'))
+             IF         COND(&MOPT *EQ '13') +
+                          THEN(CHGVAR VAR(&PGM) VALUE('SALESUM'))
+             IF         COND(&MOPT *EQ '14') +
+                          THEN(CHGVAR VAR(&PGM) VALUE('CUSTINQ'))
+/* 修正#CHK: 15=データ整合性チェック                              */
+             IF         COND(&MOPT *EQ '15') +
+                          THEN(CHGVAR VAR(&PGM) VALUE('CHKDATA'))
+/* 修正#DUE: 16=出荷予定                                          */
+             IF         COND(&MOPT *EQ '16') +
+                          THEN(CHGVAR VAR(&PGM) VALUE('SHPDUE'))
+
+             IF         COND(&PGM *EQ ' ') THEN(DO)
+             IF         COND(&MOPT *NE '  ') THEN(DO)
+             CHGVAR     VAR(&IN40) VALUE('1')
+             CHGVAR     VAR(&MMSG) VALUE('1から16の番号を選んでください')
+             ENDDO
+             GOTO       CMDLBL(LOOP)
+             ENDDO
+
+/* 修正#INQ: 5=請求書の照会(F6で印刷)。請求番号は空白でもよい      */
+             IF         COND(&PGM *EQ 'INVINQ') THEN(DO)
+             CALL       PGM(INVINQ) PARM(&MINVNUM)
+             MONMSG     MSGID(CPF0000) EXEC(DO)
+             CHGVAR     VAR(&MMSG) VALUE('INVINQ でエラーが発生しま+
+                          した(ジョブログ参照)')
+             ENDDO
+             CHGVAR     VAR(&MOPT) VALUE(' ')
+             GOTO       CMDLBL(LOOP)
+             ENDDO
+
+/* ライブラリーリスト(自分のライブラリーを追加済み)から呼び出す  */
+             CALL       PGM(&PGM)
+             MONMSG     MSGID(CPF0000) EXEC(DO)
+             CHGVAR     VAR(&MMSG) VALUE(&PGM *TCAT +
+                          ' でエラーが発生しました(ジョブログ参照)')
+             ENDDO
+             CHGVAR     VAR(&MOPT) VALUE(' ')
+             GOTO       CMDLBL(LOOP)
+
+ ENDPGM:
+             ENDPGM

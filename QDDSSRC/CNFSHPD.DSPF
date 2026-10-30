@@ -1,0 +1,95 @@
+     A*CNFSHPD - 出荷確定 受注選択画面
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      CA03(03 'F3=終了')
+     A                                      CA12(12 'F12=戻る')
+     A                                      PRINT
+     A*ORDSFL - 受注一覧 サブファイル
+     A          R ORDSFL                    SFL
+     A* Mod#PART: 2=分納出荷を追加
+     A            SFLOPT         1A  B  8  3DSPATR(UL) VALUES(' ' '1' '2')
+     A            SFSONUM       20A  O  8  9COLOR(GRN)
+     A            SFSODT         8Y 0O  8 30EDTCDE(Z)
+     A            SFCUSTNM      20A  O  8 39COLOR(TRQ)
+     A            SFSTATUS      10A  O  8 60
+     A            SFSOID        18S 0H
+     A            SFWHID         4S 0H
+     A* Mod#JP: 判定用の状態コード(表示はSFSTATUSの日本語名称)
+     A            SFSTSCD       12A  H
+     A*ORDCTL - サブファイル制御
+     A          R ORDCTL                    SFLCTL(ORDSFL)
+     A                                      SFLSIZ(9999) SFLPAG(0014)
+     A* Mod#O: FOOTERを消さないようOVERLAY
+     A                                      OVERLAY
+     A  31                                  SFLDSP
+     A  32                                  SFLDSPCTL
+     A  33                                  SFLCLR
+     A  34                                  SFLEND(*MORE)
+     A                                  1 30'出荷確定-受注一覧' DSPATR(HI)
+     A                                  1 72DATE(*SYS) EDTCDE(Y)
+     A                                  2 72TIME
+     A* Mod#INV: 出荷済(未請求)は請求書発行のみ
+     A                                  3  3'1=出荷確定  2=分納出荷'
+     A                                      COLOR(GRN)
+     A* Mod#O: 見出しの重なり(選択/受注番号)を解消
+     A                                  5  2'選択'
+     A                                  5  9'受注番号'
+     A                                  5 30'受注日'
+     A                                  5 39'顧客名'
+     A                                  5 60'状態'
+     A                                  6  2'----'
+     A                                  6  9'------------------'
+     A                                  6 30'--------'
+     A                                  6 39'--------------------'
+     A                                  6 60'----------'
+     A*CLRSCR - 画面クリア用(OVERLAYなし)
+     A* Mod#CLR: 再表示で0件(SFLDSPなし)のとき前回の一覧が残るため
+     A*          表示前にこのレコードを書いて画面を消す
+     A          R CLRSCR
+     A            CLRDUM         1A  O 24 79
+     A*FOOTER - ファンクションキー表示
+     A          R FOOTER                    OVERLAY
+     A* Mod#O: SFLEND(22行目)とOVERLAYで消えるため23行目へ
+     A                                 23  2'F3=終了  F12=戻る'
+     A                                      COLOR(BLU)
+     A* Mod#O: 左のキー説明と重なっていたため右へ
+     A                                 23 26'出荷済の受注は1=で請求書発行'
+     A                                      COLOR(BLU)
+     A  41        ERRMSG        75A  O 24  2COLOR(RED)
+     A*
+     A*LINSFL/LINCTL - 分納出荷ウィンドウ(明細別に今回出荷数量を入力)
+     A* Mod#PART: WINDOW(5 3 13 74): 3+74+枠 < 80
+     A          R LINSFL                    SFL
+     A            LSLINE         2Y 0O  4  2
+     A            LSITEM        12A  O  4  6COLOR(GRN)
+     A            LSNAME        20A  O  4 19
+     A            LSORD          7Y 0O  4 40EDTCDE(3)
+     A            LSSHP          7Y 0O  4 48EDTCDE(3)
+     A            LSREM          7Y 0O  4 56EDTCDE(3)
+     A                                      COLOR(TRQ)
+     A            LSQTY          7Y 0B  4 65EDTCDE(3)
+     A                                      DSPATR(UL)
+     A  85                                  DSPATR(RI PC)
+     A          R LINCTL                    SFLCTL(LINSFL)
+     A                                      SFLSIZ(0020)
+     A                                      SFLPAG(0008)
+     A                                      WINDOW(5 3 13 74)
+     A                                      OVERLAY
+     A  81                                  SFLDSP
+     A  82                                  SFLDSPCTL
+     A  83                                  SFLCLR
+     A            LSRRN          4S 0H
+     A                                  1  2'分納出荷'
+     A                                      DSPATR(HI)
+     A            LSSONUM       20A  O  1 14COLOR(GRN)
+     A                                  1 36'Enter=出荷確定  F12=戻る'
+     A                                      COLOR(BLU)
+     A            LSMSG         60A  O  2  2COLOR(RED)
+     A* Mod#PART: 全角見出しはSO/SIの2桁分を空けて重なりを防ぐ
+     A                                  3  1'行'
+     A                                  3  6'商品CD'
+     A                                  3 19'商品名'
+     A                                  3 40'受注数'
+     A                                  3 49'出荷済'
+     A                                  3 58'残数'
+     A* 修正#HDR: 64桁は残数のSIと重なり出ないので65桁
+     A                                  3 65'今回出荷'

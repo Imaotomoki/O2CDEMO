@@ -1,0 +1,117 @@
+     A* ==========================================================
+     A* STKMNTD - 在庫入庫・棚卸 画面
+     A* 修正#STK: 新規作成
+     A*   全角の定数の直後は1桁空けて項目を置く(SIと属性桁の重なり防止)
+     A* ==========================================================
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      CA03(03 'F3=終了')
+     A                                      CF04(04 'F4=検索')
+     A                                      CF06(06 'F6=登録')
+     A                                      CA12(12 'F12=戻る')
+     A                                      PRINT
+     A* --- 倉庫と処理の選択 ---
+     A          R STKMAIN                   
+     A                                  1  2'在庫入庫・棚卸'
+     A                                      DSPATR(HI)
+     A                                  1 70DATE(*SYS) EDTCDE(Y)
+     A                                  3  2'倉庫コード'
+     A            MWHCD         10A  B  3 15DSPATR(UL)
+     A  31                                  DSPATR(RI PC)
+     A            MWHNM         40A  O  3 27
+     A                                  4  2'処理'
+     A            MMODE          1A  B  4 15DSPATR(UL)
+     A  32                                  DSPATR(RI PC)
+     A                                  4 18'1=入庫  2=棚卸'
+     A            MMSG          75A  O  6  2COLOR(RED)
+     A                                 23  2'Enter=次へ'
+     A                                      COLOR(BLU)
+     A                                 23 16'F3=終了'
+     A                                      COLOR(BLU)
+     A                                 23 27'F4=倉庫の検索'
+     A                                      COLOR(BLU)
+     A* --- 入庫 ---
+     A          R RCPT                      
+     A                                  1  2'在庫入庫'
+     A                                      DSPATR(HI)
+     A                                  1 70DATE(*SYS) EDTCDE(Y)
+     A                                  3  2'倉庫'
+     A            RWH           60A  O  3  9COLOR(GRN)
+     A                                  5  2'商品コード'
+     A            RITEMCD       12A  B  5 15DSPATR(UL)
+     A  41                                  DSPATR(RI PC)
+     A            RITEMNM       40A  O  5 29
+     A                                  6  2'入庫数'
+     A            RQTY           7Y 0B  6 15EDTCDE(Z)
+     A                                      DSPATR(UL)
+     A  42                                  DSPATR(RI PC)
+     A            RUOM          10A  O  6 25
+     A                                  7  2'参照番号'
+     A            RREF          30A  B  7 15DSPATR(UL)
+     A                                  9  2'現在庫'
+     A            ROH            9Y 0O  9 11EDTCDE(1)
+     A                                  9 25'引当済'
+     A            RALC           9Y 0O  9 34EDTCDE(1)
+     A                                  9 48'引当可能'
+     A            RAVL           9Y 0O  9 59EDTCDE(1)
+     A            RMSG          75A  O 11  2COLOR(RED)
+     A                                 23  2'Enter=確認'
+     A                                      COLOR(BLU)
+     A                                 23 16'F6=入庫登録'
+     A                                      COLOR(BLU)
+     A                                 23 31'F12=戻る'
+     A                                      COLOR(BLU)
+     A                                 23 43'F3=終了'
+     A                                      COLOR(BLU)
+     A                                 23 54'F4=商品の検索'
+     A                                      COLOR(BLU)
+     A* --- 棚卸 ---
+     A          R CNTSFL                    SFL
+     A  44                                  SFLNXTCHG
+     A            CITEMCD       12A  O  8  2COLOR(GRN)
+     A            CITEMNM       20A  O  8 15
+     A            CBOOK          9Y 0O  8 36EDTCDE(1)
+     A            CALC           9Y 0O  8 48EDTCDE(1)
+     A            CACT           9Y 0B  8 60EDTCDE(3)
+     A                                      DSPATR(UL)
+     A  45                                  DSPATR(RI PC)
+     A            CDIFF          7Y 0O  8 70EDTCDE(N)
+     A            CITEMID        9S 0H      
+     A            CORGOH        15S 3H      
+     A            CORGALC       15S 3H      
+     A          R CNTCTL                    SFLCTL(CNTSFL)
+     A                                      SFLSIZ(0999)
+     A                                      SFLPAG(0013)
+     A  91                                  SFLDSP
+     A  92                                  SFLDSPCTL
+     A  93                                  SFLCLR
+     A  94                                  SFLEND(*MORE)
+     A            CRRN           4S 0H      
+     A                                      SFLRCDNBR(CURSOR)
+     A                                  1  2'棚卸'
+     A                                      DSPATR(HI)
+     A                                  1 70DATE(*SYS) EDTCDE(Y)
+     A                                  3  2'倉庫'
+     A            CWH           60A  O  3  9COLOR(GRN)
+     A                                  4  2'実棚数を入力'
+     A                                      COLOR(GRN)
+     A                                  4 18'Enter=差異確認'
+     A                                      COLOR(BLU)
+     A                                  4 36'F6=反映'
+     A                                      COLOR(BLU)
+     A                                  4 47'F12=戻る'
+     A                                      COLOR(BLU)
+     A                                  4 59'F3=終了'
+     A                                      COLOR(BLU)
+     A            CMSG          75A  O  5  2COLOR(RED)
+     A                                  6  2'商品コード'
+     A                                  6 15'商品名'
+     A                                  6 37'帳簿在庫'
+     A                                  6 51'引当済'
+     A                                  6 61'実棚数'
+     A                                  6 74'差異'
+     A                                  7  2'------------'
+     A                                  7 15'--------------------'
+     A                                  7 36'-----------'
+     A                                  7 48'-----------'
+     A                                  7 60'---------'
+     A                                  7 70'----------'

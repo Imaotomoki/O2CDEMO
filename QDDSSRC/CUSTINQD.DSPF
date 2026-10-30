@@ -1,0 +1,95 @@
+     A* ==========================================================
+     A* CUSTINQD - 顧客の与信・残高照会の画面
+     A* 修正#CIQ: 新規作成。CUSTINQ から使う
+     A*   全角の定数の直後は1桁空けて項目を置く(SIと属性桁の重なり防止)
+     A*   定数・項目どうしも属性の1桁を空ける(重なると表示されない)
+     A* ==========================================================
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      CA03(03 'F3=終了')
+     A                                      CF04(04 'F4=検索')
+     A                                      CA12(12 'F12=戻る')
+     A                                      PRINT
+     A* ---- LSFL - 顧客の一覧 ----
+     A          R LSFL                      SFL
+     A            LOPT           1A  B  7  2DSPATR(UL)
+     A                                      VALUES(' ' '5')
+     A            LCUST         10A  O  7  4COLOR(GRN)
+     A            LNAME         10A  O  7 15
+     A            LCUR           3A  O  7 26
+     A            LLMT          14A  O  7 30
+     A            LUSED         14A  O  7 45
+     A            LREM          14A  O  7 60DSPATR(HI)
+     A  61                                  COLOR(RED)
+     A            LOVD           5A  O  7 75
+     A  62                                  COLOR(RED)
+     A            LCUSTID        9S 0H      
+     A          R LCTL                      SFLCTL(LSFL)
+     A                                      SFLSIZ(0999)
+     A                                      SFLPAG(0014)
+     A  91                                  SFLDSP
+     A  92                                  SFLDSPCTL
+     A  93                                  SFLCLR
+     A  94                                  SFLEND(*MORE)
+     A                                      OVERLAY
+     A                                  1  2'顧客の与信・残高照会'
+     A                                      DSPATR(HI)
+     A                                  1 70DATE(*SYS) EDTCDE(Y)
+     A                                  3  2'顧客コード'
+     A            LFCUST        20A  B  3 16DSPATR(UL)
+     A                                  3 38'(前方一致・空白=全部)'
+     A                                      COLOR(BLU)
+     A                                  4  2'5=詳細  Enter=検索'
+     A                                      COLOR(BLU)
+     A                                  5  2'顧客の通貨(小数なし)'
+     A                                      COLOR(BLU)
+     A                                  5 38'赤=与信超過・期限超過'
+     A                                      COLOR(BLU)
+     A                                  6  4'顧客'
+     A                                  6 15'顧客名'
+     A                                  6 24'通貨'
+     A                                  6 38'限度額'
+     A                                  6 47'与信使用額'
+     A                                  6 64'残り与信'
+     A                                  6 75'超過'
+     A* ---- LFOOT ----
+     A          R LFOOT                     
+     A            LMSG          78A  O 22  2COLOR(RED)
+     A                                 23  2'F3=終了  F4=顧客検索'
+     A                                      COLOR(BLU)
+     A* ---- DTL - 顧客の詳細 ----
+     A          R DTL                       
+     A                                  1  2'顧客の与信・残高(詳細)'
+     A                                      DSPATR(HI)
+     A                                  1 70DATE(*SYS) EDTCDE(Y)
+     A                                  3  2'顧客'
+     A            DCUST         20A  O  3  9DSPATR(HI)
+     A            DNAME         40A  O  3 31COLOR(TRQ)
+     A                                  4  2'通貨'
+     A            DCUR           3A  O  4  9COLOR(TRQ)
+     A                                  4 15'状態'
+     A            DSTS          10A  O  4 22COLOR(TRQ)
+     A                                  6  4'与信限度額'
+     A            DLMT          17A  O  6 30
+     A                                  7  4'未収残高'
+     A            DAR           17A  O  7 30
+     A                                  8  4'未出荷の受注(税込)'
+     A            DUNSHP        17A  O  8 30
+     A                                  9  4'出荷済・未請求(税込)'
+     A            DUNBIL        17A  O  9 30
+     A                                 10  4'与信使用額'
+     A            DUSED         17A  O 10 30DSPATR(HI)
+     A                                 11  4'残り与信'
+     A            DREM          17A  O 11 30DSPATR(HI)
+     A  61                                  COLOR(RED)
+     A                                 13  4'未収の請求書'
+     A            DCNT           6A  O 13 30
+     A                                 13 38'件'
+     A                                 14  4'最も長い期限超過'
+     A            DOVD           6A  O 14 30
+     A  62                                  COLOR(RED)
+     A                                 14 38'日'
+     A                                 15  4'最後の入金日'
+     A            DLPAY         10A  O 15 30
+     A            DMSG          78A  O 22  2COLOR(RED)
+     A                                 23  2'F3=終了  F12=戻る'
+     A                                      COLOR(BLU)

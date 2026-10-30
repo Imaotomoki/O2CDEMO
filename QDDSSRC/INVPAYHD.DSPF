@@ -1,0 +1,51 @@
+     A* ==========================================================
+     A* INVPAYHD - 請求書の入金履歴の画面
+     A* 修正#PYH: 新規作成。INVPAYH から使う(請求書照会のF7)
+     A*   全角の定数の直後は1桁空けて項目を置く(SIと属性桁の重なり防止)
+     A* ==========================================================
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      CA03(03 'F3=終了')
+     A                                      CA12(12 'F12=戻る')
+     A                                      PRINT
+     A* ---- HSFL - 消込の明細(古い順) ----
+     A          R HSFL                      SFL
+     A            HAPDT         10A  O  8  2
+     A            HPAYNUM       14A  O  8 14COLOR(GRN)
+     A            HPAYDT        10A  O  8 30
+     A            HMETH          8A  O  8 42
+     A            HAMT          15A  O  8 52
+     A            HKIND          8A  O  8 69COLOR(TRQ)
+     A          R HCTL                      SFLCTL(HSFL)
+     A                                      SFLSIZ(0999)
+     A                                      SFLPAG(0012)
+     A  91                                  SFLDSP
+     A  92                                  SFLDSPCTL
+     A  93                                  SFLCLR
+     A  94                                  SFLEND(*MORE)
+     A                                      OVERLAY
+     A                                  1  2'請求書の入金履歴'
+     A                                      DSPATR(HI)
+     A                                  1 70DATE(*SYS) EDTCDE(Y)
+     A                                  3  2'請求番号'
+     A            HINV          20A  O  3 14DSPATR(HI)
+     A                                  3 37'通貨'
+     A            HCUR           3A  O  3 45COLOR(TRQ)
+     A                                  4  2'請求合計'
+     A            HTOT          15A  O  4 13
+     A                                  4 29'入金済'
+     A            HPAID         15A  O  4 38
+     A                                  4 54'残高'
+     A            HBAL          15A  O  4 61DSPATR(HI)
+     A                                  7  2'消込日'
+     A                                  7 14'入金番号'
+     A                                  7 30'入金日'
+     A                                  7 42'方法'
+     A                                  7 59'消込額'
+     A                                  7 69'区分'
+     A* ---- HFOOT - メッセージとキー(SFLの下は制御に置けない) ----
+     A          R HFOOT                     
+     A            HMSG          78A  O 22  2COLOR(RED)
+     A                                 23  2'F3=終了  F12=戻る'
+     A                                      COLOR(BLU)
+     A                                 23 25'取消=入金取消で戻した消込'
+     A                                      COLOR(BLU)

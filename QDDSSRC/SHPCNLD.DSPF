@@ -1,0 +1,90 @@
+     A* ==========================================================
+     A* SHPCNLD - 出荷取消の画面
+     A* 修正#SCN: 新規作成。SHPCANCEL から使う
+     A*   全角の定数の直後は1桁空けて項目を置く(SIと属性桁の重なり防止)
+     A*   定数・項目どうしも属性の1桁を空ける(重なると表示されない)
+     A* ==========================================================
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      CA03(03 'F3=終了')
+     A                                      CF04(04 'F4=検索')
+     A                                      CA06(06 'F6=取消実行')
+     A                                      CA12(12 'F12=戻る')
+     A                                      PRINT
+     A* ---- LSFL - 出荷の一覧(新しい順) ----
+     A          R LSFL                      SFL
+     A            LOPT           1A  B  6  2DSPATR(UL)
+     A                                      VALUES(' ' '4')
+     A            LSHPNUM       20A  O  6  4COLOR(GRN)
+     A            LSHPDT        10A  O  6 25
+     A            LSONUM        18A  O  6 36
+     A            LCUSTCD       12A  O  6 55
+     A            LSTS           8A  O  6 68COLOR(TRQ)
+     A            LSHPID        18S 0H      
+     A          R LCTL                      SFLCTL(LSFL)
+     A                                      SFLSIZ(0999)
+     A                                      SFLPAG(0014)
+     A  91                                  SFLDSP
+     A  92                                  SFLDSPCTL
+     A  93                                  SFLCLR
+     A  94                                  SFLEND(*MORE)
+     A                                      OVERLAY
+     A                                  1  2'出荷取消'
+     A                                      DSPATR(HI)
+     A                                  1 70DATE(*SYS) EDTCDE(Y)
+     A                                  3  2'顧客コード'
+     A            LFCUST        20A  B  3 16DSPATR(UL)
+     A  31                                  DSPATR(RI PC)
+     A                                  3 38'(空白=全顧客)'
+     A                                      COLOR(BLU)
+     A                                  4  2'4=取消  Enter=検索'
+     A                                      COLOR(BLU)
+     A                                  5  4'出荷番号'
+     A                                  5 25'出荷日'
+     A                                  5 36'受注番号'
+     A                                  5 55'顧客'
+     A                                  5 68'状態'
+     A* ---- LFOOT - メッセージとキー(SFLの下は制御に置けない) ----
+     A          R LFOOT                     
+     A            LMSG          78A  O 22  2COLOR(RED)
+     A                                 23  2'F3=終了  F4=顧客検索'
+     A                                      COLOR(BLU)
+     A* ---- CNF - 取消の確認 ----
+     A          R CNF                       
+     A                                  1  2'出荷取消の確認'
+     A                                      DSPATR(HI)
+     A                                  1 70DATE(*SYS) EDTCDE(Y)
+     A                                  3  2'出荷番号'
+     A            CSHPNUM       20A  O  3 14DSPATR(HI)
+     A                                  3 37'状態'
+     A            CSTS          10A  O  3 45COLOR(WHT)
+     A                                  4  2'受注番号'
+     A            CSONUM        20A  O  4 14COLOR(TRQ)
+     A                                  5  2'顧客'
+     A            CCUSTCD       20A  O  5 14COLOR(TRQ)
+     A            CCUSTNM       38A  O  5 36COLOR(TRQ)
+     A                                  6  2'出荷日'
+     A            CSHPDT        10A  O  6 14COLOR(TRQ)
+     A                                  6 26'倉庫'
+     A            CWH           40A  O  6 33COLOR(TRQ)
+     A                                  8  2'在庫に戻す商品'
+     A                                      COLOR(WHT)
+     A                                  9  4'商品'
+     A                                  9 17'品名'
+     A                                  9 42'出荷数'
+     A                                  9 51'受注出荷済'
+     A                                  9 64'(取消後)'
+     A            CAL01         76A  O 10  2
+     A            CAL02         76A  O 11  2
+     A            CAL03         76A  O 12  2
+     A            CAL04         76A  O 13  2
+     A            CAL05         76A  O 14  2
+     A            CAL06         76A  O 15  2
+     A            CAL07         76A  O 16  2
+     A            CAL08         76A  O 17  2
+     A            CAL09         76A  O 18  2
+     A            CAL10         76A  O 19  2
+     A                                 21  2'取り消すと在庫と'
+     A                                 21 21'受注の出荷済数を戻します'
+     A            CMSG          78A  O 22  2COLOR(RED)
+     A                                 23  2'F6=取消実行  F12=戻る'
+     A                                      COLOR(BLU)

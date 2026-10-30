@@ -1,0 +1,55 @@
+     A* ==========================================================
+     A* DUNPRTF - 督促状 印刷ファイル
+     A* 修正#DUN: 新規作成。顧客1社につき1枚
+     A* ==========================================================
+     A          R PHEAD                     SKIPB(3)
+     A            PISSUE        10A       70
+     A            PCUSTNM       60O        4
+     A                                      SPACEB(2)
+     A                                    66'御中'
+     A            PBILLADR      60O        4
+     A                                      SPACEB(1)
+     A            PTITLE        40O       26
+     A                                      SPACEB(3)
+     A            PMSG1         76O        4
+     A                                      SPACEB(2)
+     A            PMSG2         76O        4
+     A                                      SPACEB(1)
+     A            PMSG3         76O        4
+     A                                      SPACEB(1)
+     A            PMSG4         76O        4
+     A                                      SPACEB(1)
+     A                                     4'請求番号'
+     A                                      SPACEB(2)
+     A                                    26'請求日'
+     A                                    38'支払期限'
+     A                                    50'超過日数'
+     A                                    68'未収残高'
+     A                                     4'--------------------------'
+     A                                      SPACEB(1)
+     A                                    30'--------------------------'
+     A                                    56'---------------------'
+     A* 期限を過ぎた請求書
+     A          R PDETAIL                   SPACEB(1)
+     A            PINVNUM       20A        4
+     A            PINVDT        10A       26
+     A            PDUEDT        10A       38
+     A            PDAYS          5S 0     53EDTCDE(Z)
+     A                                    58'日'
+     A* 修正#CUR: 50=外貨(小数2桁と通貨コード) N50=円
+     A N50        PBAL          11S 0     63EDTCDE(1)
+     A  50        PBALF         15A       63
+     A  50        PCUR           3A       78
+     A* 合計(通貨ごとに1行)
+     A          R PTOTAL                    SPACEB(2)
+     A                                    50'ご請求残高合計'
+     A N50        PTOTBAL       11S 0     63EDTCDE(1)
+     A N50                                77'円'
+     A  50        PTOTF         15A       63
+     A  50        PTCUR          3A       78
+     A* 結び
+     A          R PEND                      
+     A            PMSG5         76O        4
+     A                                      SPACEB(3)
+     A            PMSG6         76O        4
+     A                                      SPACEB(1)

@@ -1,167 +1,291 @@
-      /*==============================================================*/
-      /* CLプログラム: CRTFILES                                       */
-      /* ライブラリ: HANBAI                                          */
-      /* 説明: O2Cデータベースファイルの作成                          */
-      /*==============================================================*/
-             PGM
+/*=================================================================*/
+/* プログラム: CRTFILES                                             */
+/* 概要  : O2Cデータベースファイルの作成                            */
+/* 修正#LIB: ライブラリー名をパラメーターで受け取る(例 O2CDEMO)    */
+/*=================================================================*/
+             PGM        PARM(&LIBP)
 
-             DCL        VAR(&LIB) TYPE(*CHAR) LEN(10) VALUE('HANBAI')
+             DCL        VAR(&LIBP) TYPE(*CHAR) LEN(10)
+             DCL        VAR(&LIB) TYPE(*CHAR) LEN(10)
              DCL        VAR(&MSGID) TYPE(*CHAR) LEN(7)
              DCL        VAR(&MSGDTA) TYPE(*CHAR) LEN(512)
+/* Mod#SEQ: SQLシーケンス作成用 */
+             DCL        VAR(&SQL) TYPE(*CHAR) LEN(256)
 
              MONMSG     MSGID(CPF0000) EXEC(GOTO CMDLBL(ERROR))
 
-      /*--------------------------------------------------------------*/
-      /* ライブラリの存在確認                                         */
-      /*--------------------------------------------------------------*/
-             CHKOBJ     OBJ(&LIB) OBJTYPE(*LIB)
-             MONMSG     MSGID(CPF9801) EXEC(DO)
-                SNDPGMMSG  MSGID(CPF9898) MSGF(QCPFMSG) MSGDTA('ライブラリ ' *BCAT &LIB *BCAT ' +
-                             が存在しません') MSGTYPE(*ESCAPE)
+/* 修正#LIB: ライブラリー名はパラメーターで受け取る(例 O2CDEMO)    */
+             CHGVAR     VAR(&LIB) VALUE(&LIBP)
+             MONMSG     MSGID(MCH3601) EXEC(DO)
+             SNDPGMMSG  MSGID(CPF9898) MSGF(QCPFMSG) +
+                          MSGDTA('ライブラリー名を指定してください') +
+                          MSGTYPE(*ESCAPE)
              ENDDO
 
-      /*--------------------------------------------------------------*/
-      /* 物理ファイルの作成                                           */
-      /*--------------------------------------------------------------*/
-             SNDPGMMSG  MSG('物理ファイルを作成中...') TOPGMQ(*EXT)
+             CHKOBJ     OBJ(&LIB) OBJTYPE(*LIB)
+             MONMSG     MSGID(CPF9801) EXEC(DO)
+                SNDPGMMSG  MSGID(CPF9898) MSGF(QCPFMSG) +
+                             MSGDTA('ライブラリが見つかりません') +
+                             MSGTYPE(*ESCAPE)
+             ENDDO
 
-      /* マスタファイル */
-             SNDPGMMSG  MSG('顧客マスタ(CUSTOMERP)を作成中...') TOPGMQ(*EXT)
-             CRTPF      FILE(&LIB/CUSTOMERP) SRCFILE(&LIB/QDDSSRC) MAXMBRS(*NOMAX) +
-                          SIZE(*NOMAX) LVLCHK(*NO) TEXT('取引先企業・個人の基本情報を管理')
-             MONMSG     MSGID(CPF7302) /* 既に存在 */
+             SNDPGMMSG  MSG('物理ファイルを作成中...') +
+                          TOPGMQ(*EXT) MSGTYPE(*INFO)
 
-             SNDPGMMSG  MSG('商品マスタ(ITEMP)を作成中...') TOPGMQ(*EXT)
-             CRTPF      FILE(&LIB/ITEMP) SRCFILE(&LIB/QDDSSRC) MAXMBRS(*NOMAX) SIZE(*NOMAX) +
-                          LVLCHK(*NO) TEXT('販売商品のマスタ情報管理')
+             CRTPF      FILE(&LIB/CUSTOMERP) +
+                          SRCFILE(&LIB/QDDSSRC) +
+                          MAXMBRS(*NOMAX) SIZE(*NOMAX) +
+                          LVLCHK(*NO) +
+                          TEXT('顧客マスタ')
              MONMSG     MSGID(CPF7302)
 
-             SNDPGMMSG  MSG('倉庫マスタ(WAREHOUSEP)を作成中...') TOPGMQ(*EXT)
-             CRTPF      FILE(&LIB/WAREHOUSEP) SRCFILE(&LIB/QDDSSRC) MAXMBRS(*NOMAX) +
-                          SIZE(*NOMAX) LVLCHK(*NO) TEXT('物流拠点の管理')
+             CRTPF      FILE(&LIB/ITEMP) +
+                          SRCFILE(&LIB/QDDSSRC) +
+                          MAXMBRS(*NOMAX) SIZE(*NOMAX) +
+                          LVLCHK(*NO) +
+                          TEXT('商品マスタ')
              MONMSG     MSGID(CPF7302)
 
-             SNDPGMMSG  MSG('在庫マスタ(INVENTORYP)を作成中...') TOPGMQ(*EXT)
-             CRTPF      FILE(&LIB/INVENTORYP) SRCFILE(&LIB/QDDSSRC) MAXMBRS(*NOMAX) +
-                          SIZE(*NOMAX) LVLCHK(*NO) TEXT('倉庫×商品の在庫数量管理')
+             CRTPF      FILE(&LIB/WAREHOUSEP) +
+                          SRCFILE(&LIB/QDDSSRC) +
+                          MAXMBRS(*NOMAX) SIZE(*NOMAX) +
+                          LVLCHK(*NO) +
+                          TEXT('倉庫マスタ')
              MONMSG     MSGID(CPF7302)
 
-      /* トランザクションファイル */
-             SNDPGMMSG  MSG('受注ヘッダ(SORDERHP)を作成中...') TOPGMQ(*EXT)
-             CRTPF      FILE(&LIB/SORDERHP) SRCFILE(&LIB/QDDSSRC) MAXMBRS(*NOMAX) SIZE(*NOMAX) +
-                          LVLCHK(*NO) TEXT('受注の基本情報管理')
+             CRTPF      FILE(&LIB/INVENTORYP) +
+                          SRCFILE(&LIB/QDDSSRC) +
+                          MAXMBRS(*NOMAX) SIZE(*NOMAX) +
+                          LVLCHK(*NO) +
+                          TEXT('在庫')
              MONMSG     MSGID(CPF7302)
 
-             SNDPGMMSG  MSG('受注明細(SORDERLP)を作成中...') TOPGMQ(*EXT)
-             CRTPF      FILE(&LIB/SORDERLP) SRCFILE(&LIB/QDDSSRC) MAXMBRS(*NOMAX) SIZE(*NOMAX) +
-                          LVLCHK(*NO) TEXT('受注の商品明細管理')
+             CRTPF      FILE(&LIB/SORDERHP) +
+                          SRCFILE(&LIB/QDDSSRC) +
+                          MAXMBRS(*NOMAX) SIZE(*NOMAX) +
+                          LVLCHK(*NO) +
+                          TEXT('受注ヘッダ')
              MONMSG     MSGID(CPF7302)
 
-             SNDPGMMSG  MSG('出荷ヘッダ(SHIPMENTHP)を作成中...') TOPGMQ(*EXT)
-             CRTPF      FILE(&LIB/SHIPMENTHP) SRCFILE(&LIB/QDDSSRC) MAXMBRS(*NOMAX) +
-                          SIZE(*NOMAX) LVLCHK(*NO) TEXT('出荷指示・実績の管理')
+             CRTPF      FILE(&LIB/SORDERLP) +
+                          SRCFILE(&LIB/QDDSSRC) +
+                          MAXMBRS(*NOMAX) SIZE(*NOMAX) +
+                          LVLCHK(*NO) +
+                          TEXT('受注明細')
              MONMSG     MSGID(CPF7302)
 
-             SNDPGMMSG  MSG('出荷明細(SHIPMENTLP)を作成中...') TOPGMQ(*EXT)
-             CRTPF      FILE(&LIB/SHIPMENTLP) SRCFILE(&LIB/QDDSSRC) MAXMBRS(*NOMAX) +
-                          SIZE(*NOMAX) LVLCHK(*NO) TEXT('出荷の商品明細管理')
+             CRTPF      FILE(&LIB/SHIPMENTHP) +
+                          SRCFILE(&LIB/QDDSSRC) +
+                          MAXMBRS(*NOMAX) SIZE(*NOMAX) +
+                          LVLCHK(*NO) +
+                          TEXT('出荷ヘッダ')
              MONMSG     MSGID(CPF7302)
 
-             SNDPGMMSG  MSG('請求ヘッダ(INVOICEHP)を作成中...') TOPGMQ(*EXT)
-             CRTPF      FILE(&LIB/INVOICEHP) SRCFILE(&LIB/QDDSSRC) MAXMBRS(*NOMAX) +
-                          SIZE(*NOMAX) LVLCHK(*NO) TEXT('請求書の管理')
+             CRTPF      FILE(&LIB/SHIPMENTLP) +
+                          SRCFILE(&LIB/QDDSSRC) +
+                          MAXMBRS(*NOMAX) SIZE(*NOMAX) +
+                          LVLCHK(*NO) +
+                          TEXT('出荷明細')
              MONMSG     MSGID(CPF7302)
 
-             SNDPGMMSG  MSG('請求明細(INVOICELP)を作成中...') TOPGMQ(*EXT)
-             CRTPF      FILE(&LIB/INVOICELP) SRCFILE(&LIB/QDDSSRC) MAXMBRS(*NOMAX) +
-                          SIZE(*NOMAX) LVLCHK(*NO) TEXT('請求の商品明細管理')
+             CRTPF      FILE(&LIB/INVOICEHP) +
+                          SRCFILE(&LIB/QDDSSRC) +
+                          MAXMBRS(*NOMAX) SIZE(*NOMAX) +
+                          LVLCHK(*NO) +
+                          TEXT('請求書ヘッダ')
              MONMSG     MSGID(CPF7302)
 
-             SNDPGMMSG  MSG('入金情報(PAYMENTP)を作成中...') TOPGMQ(*EXT)
-             CRTPF      FILE(&LIB/PAYMENTP) SRCFILE(&LIB/QDDSSRC) MAXMBRS(*NOMAX) SIZE(*NOMAX) +
-                          LVLCHK(*NO) TEXT('顧客からの入金記録と消込管理')
+             CRTPF      FILE(&LIB/INVOICELP) +
+                          SRCFILE(&LIB/QDDSSRC) +
+                          MAXMBRS(*NOMAX) SIZE(*NOMAX) +
+                          LVLCHK(*NO) +
+                          TEXT('請求書明細')
              MONMSG     MSGID(CPF7302)
 
-      /* 補助ファイル */
-             SNDPGMMSG  MSG('為替レート(FXRATEP)を作成中...') TOPGMQ(*EXT)
-             CRTPF      FILE(&LIB/FXRATEP) SRCFILE(&LIB/QDDSSRC) MAXMBRS(*NOMAX) SIZE(*NOMAX) +
-                          LVLCHK(*NO) TEXT('日付・通貨ペア別の為替レート管理')
+             CRTPF      FILE(&LIB/PAYMENTP) +
+                          SRCFILE(&LIB/QDDSSRC) +
+                          MAXMBRS(*NOMAX) SIZE(*NOMAX) +
+                          LVLCHK(*NO) +
+                          TEXT('入金')
              MONMSG     MSGID(CPF7302)
 
-             SNDPGMMSG  MSG('コードマスタ(CODEMSTRP)を作成中...') TOPGMQ(*EXT)
-             CRTPF      FILE(&LIB/CODEMSTRP) SRCFILE(&LIB/QDDSSRC) MAXMBRS(*NOMAX) +
-                          SIZE(*NOMAX) LVLCHK(*NO) TEXT('システムコードマスタ')
+             CRTPF      FILE(&LIB/FXRATEP) +
+                          SRCFILE(&LIB/QDDSSRC) +
+                          MAXMBRS(*NOMAX) SIZE(*NOMAX) +
+                          LVLCHK(*NO) +
+                          TEXT('為替レート')
              MONMSG     MSGID(CPF7302)
 
-             SNDPGMMSG  MSG('ユーザーマスタ(APPUSERP)を作成中...') TOPGMQ(*EXT)
-             CRTPF      FILE(&LIB/APPUSERP) SRCFILE(&LIB/QDDSSRC) MAXMBRS(*NOMAX) SIZE(*NOMAX) +
-                          LVLCHK(*NO) TEXT('システム利用者の管理')
+             CRTPF      FILE(&LIB/CODEMSTRP) +
+                          SRCFILE(&LIB/QDDSSRC) +
+                          MAXMBRS(*NOMAX) SIZE(*NOMAX) +
+                          LVLCHK(*NO) +
+                          TEXT('コードマスタ')
              MONMSG     MSGID(CPF7302)
 
-             SNDPGMMSG  MSG('ユーザー権限(USERROLEP)を作成中...') TOPGMQ(*EXT)
-             CRTPF      FILE(&LIB/USERROLEP) SRCFILE(&LIB/QDDSSRC) MAXMBRS(*NOMAX) +
-                          SIZE(*NOMAX) LVLCHK(*NO) TEXT('ユーザーと権限ロールの紐付け')
+             CRTPF      FILE(&LIB/APPUSERP) +
+                          SRCFILE(&LIB/QDDSSRC) +
+                          MAXMBRS(*NOMAX) SIZE(*NOMAX) +
+                          LVLCHK(*NO) +
+                          TEXT('アプリユーザー')
              MONMSG     MSGID(CPF7302)
 
-             SNDPGMMSG  MSG('変更履歴(CHANGELOGP)を作成中...') TOPGMQ(*EXT)
-             CRTPF      FILE(&LIB/CHANGELOGP) SRCFILE(&LIB/QDDSSRC) MAXMBRS(*NOMAX) +
-                          SIZE(*NOMAX) LVLCHK(*NO) TEXT('ビジネス監査用の変更ログ')
+             CRTPF      FILE(&LIB/CHANGELOGP) +
+                          SRCFILE(&LIB/QDDSSRC) +
+                          MAXMBRS(*NOMAX) SIZE(*NOMAX) +
+                          LVLCHK(*NO) +
+                          TEXT('変更ログ')
              MONMSG     MSGID(CPF7302)
 
-      /*--------------------------------------------------------------*/
-      /* 論理ファイルの作成                                           */
-      /*--------------------------------------------------------------*/
-             SNDPGMMSG  MSG('論理ファイルを作成中...') TOPGMQ(*EXT)
-
-             SNDPGMMSG  MSG('顧客LF(CUSTOMERL1)を作成中...') TOPGMQ(*EXT)
-             CRTLF      FILE(&LIB/CUSTOMERL1) SRCFILE(&LIB/QDDSSRC) +
-                          TEXT('顧客コードでアクセスするための論理ファイル')
+/* Mod#SETUP: 入金充当明細(PAYENTRYで使用)も作成する */
+             CRTPF      FILE(&LIB/PAYAPPLYP) +
+                          SRCFILE(&LIB/QDDSSRC) +
+                          MAXMBRS(*NOMAX) SIZE(*NOMAX) +
+                          TEXT('入金充当明細')
              MONMSG     MSGID(CPF7302)
 
-             SNDPGMMSG  MSG('商品LF(ITEML1)を作成中...') TOPGMQ(*EXT)
-             CRTLF      FILE(&LIB/ITEML1) SRCFILE(&LIB/QDDSSRC) +
-                          TEXT('商品コードでアクセスするための論理ファイル')
+             CRTPF      FILE(&LIB/DUNNINGP) +
+                          SRCFILE(&LIB/QDDSSRC) +
+                          MAXMBRS(*NOMAX) SIZE(*NOMAX) +
+                          TEXT('督促履歴')
              MONMSG     MSGID(CPF7302)
 
-             SNDPGMMSG  MSG('倉庫LF(WAREHOUSL1)を作成中...') TOPGMQ(*EXT)
-             CRTLF      FILE(&LIB/WAREHOUSL1) SRCFILE(&LIB/QDDSSRC) +
-                          TEXT('倉庫コードでアクセスするための論理ファイル')
+             CRTPF      FILE(&LIB/STKMOVEP) +
+                          SRCFILE(&LIB/QDDSSRC) +
+                          MAXMBRS(*NOMAX) SIZE(*NOMAX) +
+                          TEXT('在庫移動履歴')
              MONMSG     MSGID(CPF7302)
 
-             SNDPGMMSG  MSG('在庫LF(INVENTORL1)を作成中...') TOPGMQ(*EXT)
-             CRTLF      FILE(&LIB/INVENTORL1) SRCFILE(&LIB/QDDSSRC) +
-                          TEXT('商品IDでアクセスするための論理ファイル')
+             CRTPF      FILE(&LIB/CUSTCLSP) +
+                          SRCFILE(&LIB/QDDSSRC) +
+                          MAXMBRS(*NOMAX) SIZE(*NOMAX) +
+                          TEXT('顧客締日')
              MONMSG     MSGID(CPF7302)
 
-             SNDPGMMSG  MSG('受注ヘッダLF1(SORDERHL1)を作成中...') TOPGMQ(*EXT)
-             CRTLF      FILE(&LIB/SORDERHL1) SRCFILE(&LIB/QDDSSRC) +
-                          TEXT('受注番号でアクセスするための論理ファイル')
+             CRTPF      FILE(&LIB/BILLSTMP) +
+                          SRCFILE(&LIB/QDDSSRC) +
+                          MAXMBRS(*NOMAX) SIZE(*NOMAX) +
+                          TEXT('請求締め履歴')
              MONMSG     MSGID(CPF7302)
 
-             SNDPGMMSG  MSG('受注ヘッダLF2(SORDERHL2)を作成中...') TOPGMQ(*EXT)
-             CRTLF      FILE(&LIB/SORDERHL2) SRCFILE(&LIB/QDDSSRC) +
-                          TEXT('顧客別・日付別検索用の論理ファイル')
+             SNDPGMMSG  MSG('論理ファイルを作成中...') +
+                          TOPGMQ(*EXT) MSGTYPE(*INFO)
+
+             CRTLF      FILE(&LIB/CUSTOMERL1) +
+                          SRCFILE(&LIB/QDDSSRC) +
+                          TEXT('顧客コード順')
              MONMSG     MSGID(CPF7302)
 
-             SNDPGMMSG  MSG('受注明細LF(SORDERLL1)を作成中...') TOPGMQ(*EXT)
-             CRTLF      FILE(&LIB/SORDERLL1) SRCFILE(&LIB/QDDSSRC) +
-                          TEXT('商品別の受注検索用論理ファイル')
+             CRTLF      FILE(&LIB/ITEML1) +
+                          SRCFILE(&LIB/QDDSSRC) +
+                          TEXT('商品コード順')
              MONMSG     MSGID(CPF7302)
 
-      /*--------------------------------------------------------------*/
-      /* 完了メッセージ                                               */
-      /*--------------------------------------------------------------*/
-             SNDPGMMSG  MSG('ファイル作成が完了しました') TOPGMQ(*EXT) MSGTYPE(*COMP)
+             CRTLF      FILE(&LIB/WAREHOUSL1) +
+                          SRCFILE(&LIB/QDDSSRC) +
+                          TEXT('倉庫コード順')
+             MONMSG     MSGID(CPF7302)
+
+             CRTLF      FILE(&LIB/INVENTORL1) +
+                          SRCFILE(&LIB/QDDSSRC) +
+                          TEXT('在庫-商品順')
+             MONMSG     MSGID(CPF7302)
+
+             CRTLF      FILE(&LIB/SORDERHL1) +
+                          SRCFILE(&LIB/QDDSSRC) +
+                          TEXT('受注ヘッダ-番号順')
+             MONMSG     MSGID(CPF7302)
+
+             CRTLF      FILE(&LIB/SORDERHL2) +
+                          SRCFILE(&LIB/QDDSSRC) +
+                          TEXT('受注ヘッダ-顧客/日付順')
+             MONMSG     MSGID(CPF7302)
+
+             CRTLF      FILE(&LIB/SORDERLL1) +
+                          SRCFILE(&LIB/QDDSSRC) +
+                          TEXT('受注明細-商品順')
+             MONMSG     MSGID(CPF7302)
+
+/* Mod#SETUP: 請求/出荷処理で使う論理ファイル */
+             CRTLF      FILE(&LIB/INVOICEHL1) +
+                          SRCFILE(&LIB/QDDSSRC) +
+                          TEXT('請求ヘッダ-番号順')
+             MONMSG     MSGID(CPF7302)
+
+             CRTLF      FILE(&LIB/SHIPMENHL1) +
+                          SRCFILE(&LIB/QDDSSRC) +
+                          TEXT('出荷ヘッダ-受注順')
+             MONMSG     MSGID(CPF7302)
+
+/* Mod#SEQ: 採番用SQLシーケンス(既にあればそのまま) */
+             SNDPGMMSG  MSG('採番シーケンスを作成中...') +
+                          TOPGMQ(*EXT) MSGTYPE(*INFO)
+
+             CHGVAR     VAR(&SQL) VALUE('CREATE SEQUENCE ' *CAT +
+                          &LIB *TCAT '.O2C_SOID_SEQ AS BIGINT +
+                          START WITH 1')
+             RUNSQL     SQL(&SQL) COMMIT(*NONE) NAMING(*SQL)
+             MONMSG     MSGID(SQL9010)
+
+             CHGVAR     VAR(&SQL) VALUE('CREATE SEQUENCE ' *CAT +
+                          &LIB *TCAT '.O2C_INVID_SEQ AS BIGINT +
+                          START WITH 1')
+             RUNSQL     SQL(&SQL) COMMIT(*NONE) NAMING(*SQL)
+             MONMSG     MSGID(SQL9010)
+
+             CHGVAR     VAR(&SQL) VALUE('CREATE SEQUENCE ' *CAT +
+                          &LIB *TCAT '.O2C_PAYID_SEQ AS BIGINT +
+                          START WITH 1')
+             RUNSQL     SQL(&SQL) COMMIT(*NONE) NAMING(*SQL)
+             MONMSG     MSGID(SQL9010)
+
+             CHGVAR     VAR(&SQL) VALUE('CREATE SEQUENCE ' *CAT +
+                          &LIB *TCAT '.O2C_APPLYID_SEQ AS BIGINT +
+                          START WITH 1')
+             RUNSQL     SQL(&SQL) COMMIT(*NONE) NAMING(*SQL)
+             MONMSG     MSGID(SQL9010)
+
+             CHGVAR     VAR(&SQL) VALUE('CREATE SEQUENCE ' *CAT +
+                          &LIB *TCAT '.O2C_LOGID_SEQ AS BIGINT +
+                          START WITH 1')
+             RUNSQL     SQL(&SQL) COMMIT(*NONE) NAMING(*SQL)
+             MONMSG     MSGID(SQL9010)
+
+             CHGVAR     VAR(&SQL) VALUE('CREATE SEQUENCE ' *CAT +
+                          &LIB *TCAT '.O2C_SHPID_SEQ AS BIGINT +
+                          START WITH 1')
+             RUNSQL     SQL(&SQL) COMMIT(*NONE) NAMING(*SQL)
+             MONMSG     MSGID(SQL9010)
+
+             CHGVAR     VAR(&SQL) VALUE('CREATE SEQUENCE ' *CAT +
+                          &LIB *TCAT '.O2C_DUNID_SEQ AS BIGINT +
+                          START WITH 1')
+             RUNSQL     SQL(&SQL) COMMIT(*NONE) NAMING(*SQL)
+             MONMSG     MSGID(SQL9010)
+
+             CHGVAR     VAR(&SQL) VALUE('CREATE SEQUENCE ' *CAT +
+                          &LIB *TCAT '.O2C_MOVID_SEQ AS BIGINT +
+                          START WITH 1')
+             RUNSQL     SQL(&SQL) COMMIT(*NONE) NAMING(*SQL)
+             MONMSG     MSGID(SQL9010)
+
+             CHGVAR     VAR(&SQL) VALUE('CREATE SEQUENCE ' *CAT +
+                          &LIB *TCAT '.O2C_STMID_SEQ AS BIGINT +
+                          START WITH 1')
+             RUNSQL     SQL(&SQL) COMMIT(*NONE) NAMING(*SQL)
+             MONMSG     MSGID(SQL9010)
+
+             SNDPGMMSG  MSG('ファイル作成が完了しました') +
+                          TOPGMQ(*EXT) MSGTYPE(*COMP)
 
              GOTO       CMDLBL(ENDPGM)
 
-      /*--------------------------------------------------------------*/
-      /* エラー処理                                                   */
-      /*--------------------------------------------------------------*/
  ERROR:
              RCVMSG     MSGTYPE(*EXCP) MSGDTA(&MSGDTA) MSGID(&MSGID)
-             SNDPGMMSG  MSGID(CPF9898) MSGF(QCPFMSG) MSGDTA('エラー: ' *BCAT &MSGID *BCAT ' - ' +
-                          *BCAT &MSGDTA) MSGTYPE(*ESCAPE)
+             SNDPGMMSG  MSGID(CPF9898) MSGF(QCPFMSG) +
+                          MSGDTA('ファイル作成エラー') +
+                          MSGTYPE(*ESCAPE)
 
  ENDPGM:
              ENDPGM
+

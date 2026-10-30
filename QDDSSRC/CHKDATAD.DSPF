@@ -1,0 +1,41 @@
+     A* ==========================================================
+     A* CHKDATAD - データ整合性チェックの画面
+     A* 修正#CHK: 新規作成。CHKDATA から使う
+     A*   全角の定数の直後は1桁空けて項目を置く(SIと属性桁の重なり防止)
+     A* ==========================================================
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      CA03(03 'F3=終了')
+     A                                      CA05(05 'F5=再実行')
+     A                                      CA12(12 'F12=戻る')
+     A                                      PRINT
+     A* ---- RSFL - 不一致の一覧 ----
+     A          R RSFL                      SFL
+     A            RNAME         28A  O  7  2COLOR(WHT)
+     A            RKEY          22A  O  7 31COLOR(GRN)
+     A            RVAL          13A  O  7 54
+     A            RCOR          13A  O  7 68COLOR(TRQ)
+     A          R RCTL                      SFLCTL(RSFL)
+     A                                      SFLSIZ(0999)
+     A                                      SFLPAG(0014)
+     A  91                                  SFLDSP
+     A  92                                  SFLDSPCTL
+     A  93                                  SFLCLR
+     A  94                                  SFLEND(*MORE)
+     A                                      OVERLAY
+     A                                  1  2'データ整合性チェック'
+     A                                      DSPATR(HI)
+     A                                  1 70DATE(*SYS) EDTCDE(Y)
+     A                                  3  2'10項目を点検(変更なし)'
+     A                                      COLOR(BLU)
+     A                                  4  2'不一致'
+     A            RCNT           6A  O  4 11DSPATR(HI)
+     A                                  4 19'件'
+     A                                  6  2'チェック'
+     A                                  6 31'対象'
+     A                                  6 61'値'
+     A                                  6 69'あるべき値'
+     A* ---- RFOOT ----
+     A          R RFOOT                     
+     A            RMSG          78A  O 22  2COLOR(GRN)
+     A                                 23  2'F3=終了  F5=再実行'
+     A                                      COLOR(BLU)

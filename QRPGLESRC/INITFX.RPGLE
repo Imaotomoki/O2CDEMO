@@ -2,25 +2,12 @@
       *=====================================================================
       * プログラム名: INITFX
       * 説明: 為替レートの初期データ投入
-      * ライブラリ: DEMOAPP
       *=====================================================================
-
-      *---------------------------------------------------------------
-      * ファイル定義
-      *---------------------------------------------------------------
      FFXRATEP   O    E             DISK
-
-      *---------------------------------------------------------------
-      * 変数定義
-      *---------------------------------------------------------------
      D WTIMESTAMP      S               Z
      D WDATE8          S              8S 0
      D WTIME6          S              6S 0
      D W#CNTR          S              9S 0
-
-      *=====================================================================
-      * メインルーチン
-      *=====================================================================
      C                   EXSR      @INZ
      C                   EXSR      @JPY
      C                   EXSR      @USD
@@ -29,20 +16,12 @@
      C                   EXSR      @KRW
      C                   EXSR      @SAME
      C                   EXSR      @END
-
-      *=====================================================================
-      * サブルーチン: @INZ - 初期処理
-      *=====================================================================
      C     @INZ          BEGSR
      C                   TIME                    WTIMESTAMP
      C                   EVAL      WDATE8 = %DEC(%DATE(WTIMESTAMP):*ISO)
      C                   EVAL      WTIME6 = %DEC(%TIME(WTIMESTAMP):*HMS)
      C                   EVAL      W#CNTR = *ZERO
      C                   ENDSR
-
-      *=====================================================================
-      * サブルーチン: @JPY - JPY基準の為替レート投入
-      *=====================================================================
      C     @JPY          BEGSR
      C                   EVAL      RATEDATE = WDATE8
      C                   EVAL      FROMCUR = 'JPY'
@@ -51,8 +30,7 @@
      C                   EVAL      CRTDATE = WDATE8
      C                   EVAL      CRTTIM = WTIME6
      C                   WRITE     FXREC
-     C                   ADD       1             W#CNTR
-
+     C                   EVAL      W#CNTR = W#CNTR + 1
      C                   EVAL      RATEDATE = WDATE8
      C                   EVAL      FROMCUR = 'JPY'
      C                   EVAL      TOCUR = 'EUR'
@@ -60,8 +38,7 @@
      C                   EVAL      CRTDATE = WDATE8
      C                   EVAL      CRTTIM = WTIME6
      C                   WRITE     FXREC
-     C                   ADD       1             W#CNTR
-
+     C                   EVAL      W#CNTR = W#CNTR + 1
      C                   EVAL      RATEDATE = WDATE8
      C                   EVAL      FROMCUR = 'JPY'
      C                   EVAL      TOCUR = 'CNY'
@@ -69,8 +46,7 @@
      C                   EVAL      CRTDATE = WDATE8
      C                   EVAL      CRTTIM = WTIME6
      C                   WRITE     FXREC
-     C                   ADD       1             W#CNTR
-
+     C                   EVAL      W#CNTR = W#CNTR + 1
      C                   EVAL      RATEDATE = WDATE8
      C                   EVAL      FROMCUR = 'JPY'
      C                   EVAL      TOCUR = 'KRW'
@@ -78,12 +54,8 @@
      C                   EVAL      CRTDATE = WDATE8
      C                   EVAL      CRTTIM = WTIME6
      C                   WRITE     FXREC
-     C                   ADD       1             W#CNTR
+     C                   EVAL      W#CNTR = W#CNTR + 1
      C                   ENDSR
-
-      *=====================================================================
-      * サブルーチン: @USD - USD基準の為替レート投入
-      *=====================================================================
      C     @USD          BEGSR
      C                   EVAL      RATEDATE = WDATE8
      C                   EVAL      FROMCUR = 'USD'
@@ -92,8 +64,7 @@
      C                   EVAL      CRTDATE = WDATE8
      C                   EVAL      CRTTIM = WTIME6
      C                   WRITE     FXREC
-     C                   ADD       1             W#CNTR
-
+     C                   EVAL      W#CNTR = W#CNTR + 1
      C                   EVAL      RATEDATE = WDATE8
      C                   EVAL      FROMCUR = 'USD'
      C                   EVAL      TOCUR = 'EUR'
@@ -101,8 +72,7 @@
      C                   EVAL      CRTDATE = WDATE8
      C                   EVAL      CRTTIM = WTIME6
      C                   WRITE     FXREC
-     C                   ADD       1             W#CNTR
-
+     C                   EVAL      W#CNTR = W#CNTR + 1
      C                   EVAL      RATEDATE = WDATE8
      C                   EVAL      FROMCUR = 'USD'
      C                   EVAL      TOCUR = 'CNY'
@@ -110,8 +80,7 @@
      C                   EVAL      CRTDATE = WDATE8
      C                   EVAL      CRTTIM = WTIME6
      C                   WRITE     FXREC
-     C                   ADD       1             W#CNTR
-
+     C                   EVAL      W#CNTR = W#CNTR + 1
      C                   EVAL      RATEDATE = WDATE8
      C                   EVAL      FROMCUR = 'USD'
      C                   EVAL      TOCUR = 'KRW'
@@ -119,12 +88,8 @@
      C                   EVAL      CRTDATE = WDATE8
      C                   EVAL      CRTTIM = WTIME6
      C                   WRITE     FXREC
-     C                   ADD       1             W#CNTR
+     C                   EVAL      W#CNTR = W#CNTR + 1
      C                   ENDSR
-
-      *=====================================================================
-      * サブルーチン: @EUR - EUR基準の為替レート投入
-      *=====================================================================
      C     @EUR          BEGSR
      C                   EVAL      RATEDATE = WDATE8
      C                   EVAL      FROMCUR = 'EUR'
@@ -133,8 +98,7 @@
      C                   EVAL      CRTDATE = WDATE8
      C                   EVAL      CRTTIM = WTIME6
      C                   WRITE     FXREC
-     C                   ADD       1             W#CNTR
-
+     C                   EVAL      W#CNTR = W#CNTR + 1
      C                   EVAL      RATEDATE = WDATE8
      C                   EVAL      FROMCUR = 'EUR'
      C                   EVAL      TOCUR = 'USD'
@@ -142,8 +106,7 @@
      C                   EVAL      CRTDATE = WDATE8
      C                   EVAL      CRTTIM = WTIME6
      C                   WRITE     FXREC
-     C                   ADD       1             W#CNTR
-
+     C                   EVAL      W#CNTR = W#CNTR + 1
      C                   EVAL      RATEDATE = WDATE8
      C                   EVAL      FROMCUR = 'EUR'
      C                   EVAL      TOCUR = 'CNY'
@@ -151,8 +114,7 @@
      C                   EVAL      CRTDATE = WDATE8
      C                   EVAL      CRTTIM = WTIME6
      C                   WRITE     FXREC
-     C                   ADD       1             W#CNTR
-
+     C                   EVAL      W#CNTR = W#CNTR + 1
      C                   EVAL      RATEDATE = WDATE8
      C                   EVAL      FROMCUR = 'EUR'
      C                   EVAL      TOCUR = 'KRW'
@@ -160,12 +122,8 @@
      C                   EVAL      CRTDATE = WDATE8
      C                   EVAL      CRTTIM = WTIME6
      C                   WRITE     FXREC
-     C                   ADD       1             W#CNTR
+     C                   EVAL      W#CNTR = W#CNTR + 1
      C                   ENDSR
-
-      *=====================================================================
-      * サブルーチン: @CNY - CNY基準の為替レート投入
-      *=====================================================================
      C     @CNY          BEGSR
      C                   EVAL      RATEDATE = WDATE8
      C                   EVAL      FROMCUR = 'CNY'
@@ -174,8 +132,7 @@
      C                   EVAL      CRTDATE = WDATE8
      C                   EVAL      CRTTIM = WTIME6
      C                   WRITE     FXREC
-     C                   ADD       1             W#CNTR
-
+     C                   EVAL      W#CNTR = W#CNTR + 1
      C                   EVAL      RATEDATE = WDATE8
      C                   EVAL      FROMCUR = 'CNY'
      C                   EVAL      TOCUR = 'USD'
@@ -183,8 +140,7 @@
      C                   EVAL      CRTDATE = WDATE8
      C                   EVAL      CRTTIM = WTIME6
      C                   WRITE     FXREC
-     C                   ADD       1             W#CNTR
-
+     C                   EVAL      W#CNTR = W#CNTR + 1
      C                   EVAL      RATEDATE = WDATE8
      C                   EVAL      FROMCUR = 'CNY'
      C                   EVAL      TOCUR = 'EUR'
@@ -192,8 +148,7 @@
      C                   EVAL      CRTDATE = WDATE8
      C                   EVAL      CRTTIM = WTIME6
      C                   WRITE     FXREC
-     C                   ADD       1             W#CNTR
-
+     C                   EVAL      W#CNTR = W#CNTR + 1
      C                   EVAL      RATEDATE = WDATE8
      C                   EVAL      FROMCUR = 'CNY'
      C                   EVAL      TOCUR = 'KRW'
@@ -201,12 +156,8 @@
      C                   EVAL      CRTDATE = WDATE8
      C                   EVAL      CRTTIM = WTIME6
      C                   WRITE     FXREC
-     C                   ADD       1             W#CNTR
+     C                   EVAL      W#CNTR = W#CNTR + 1
      C                   ENDSR
-
-      *=====================================================================
-      * サブルーチン: @KRW - KRW基準の為替レート投入
-      *=====================================================================
      C     @KRW          BEGSR
      C                   EVAL      RATEDATE = WDATE8
      C                   EVAL      FROMCUR = 'KRW'
@@ -215,8 +166,7 @@
      C                   EVAL      CRTDATE = WDATE8
      C                   EVAL      CRTTIM = WTIME6
      C                   WRITE     FXREC
-     C                   ADD       1             W#CNTR
-
+     C                   EVAL      W#CNTR = W#CNTR + 1
      C                   EVAL      RATEDATE = WDATE8
      C                   EVAL      FROMCUR = 'KRW'
      C                   EVAL      TOCUR = 'USD'
@@ -224,8 +174,7 @@
      C                   EVAL      CRTDATE = WDATE8
      C                   EVAL      CRTTIM = WTIME6
      C                   WRITE     FXREC
-     C                   ADD       1             W#CNTR
-
+     C                   EVAL      W#CNTR = W#CNTR + 1
      C                   EVAL      RATEDATE = WDATE8
      C                   EVAL      FROMCUR = 'KRW'
      C                   EVAL      TOCUR = 'EUR'
@@ -233,8 +182,7 @@
      C                   EVAL      CRTDATE = WDATE8
      C                   EVAL      CRTTIM = WTIME6
      C                   WRITE     FXREC
-     C                   ADD       1             W#CNTR
-
+     C                   EVAL      W#CNTR = W#CNTR + 1
      C                   EVAL      RATEDATE = WDATE8
      C                   EVAL      FROMCUR = 'KRW'
      C                   EVAL      TOCUR = 'CNY'
@@ -242,12 +190,8 @@
      C                   EVAL      CRTDATE = WDATE8
      C                   EVAL      CRTTIM = WTIME6
      C                   WRITE     FXREC
-     C                   ADD       1             W#CNTR
+     C                   EVAL      W#CNTR = W#CNTR + 1
      C                   ENDSR
-
-      *=====================================================================
-      * サブルーチン: @SAME - 同一通貨のレート投入（1.0）
-      *=====================================================================
      C     @SAME         BEGSR
      C                   EVAL      RATEDATE = WDATE8
      C                   EVAL      FROMCUR = 'JPY'
@@ -256,8 +200,7 @@
      C                   EVAL      CRTDATE = WDATE8
      C                   EVAL      CRTTIM = WTIME6
      C                   WRITE     FXREC
-     C                   ADD       1             W#CNTR
-
+     C                   EVAL      W#CNTR = W#CNTR + 1
      C                   EVAL      RATEDATE = WDATE8
      C                   EVAL      FROMCUR = 'USD'
      C                   EVAL      TOCUR = 'USD'
@@ -265,8 +208,7 @@
      C                   EVAL      CRTDATE = WDATE8
      C                   EVAL      CRTTIM = WTIME6
      C                   WRITE     FXREC
-     C                   ADD       1             W#CNTR
-
+     C                   EVAL      W#CNTR = W#CNTR + 1
      C                   EVAL      RATEDATE = WDATE8
      C                   EVAL      FROMCUR = 'EUR'
      C                   EVAL      TOCUR = 'EUR'
@@ -274,8 +216,7 @@
      C                   EVAL      CRTDATE = WDATE8
      C                   EVAL      CRTTIM = WTIME6
      C                   WRITE     FXREC
-     C                   ADD       1             W#CNTR
-
+     C                   EVAL      W#CNTR = W#CNTR + 1
      C                   EVAL      RATEDATE = WDATE8
      C                   EVAL      FROMCUR = 'CNY'
      C                   EVAL      TOCUR = 'CNY'
@@ -283,8 +224,7 @@
      C                   EVAL      CRTDATE = WDATE8
      C                   EVAL      CRTTIM = WTIME6
      C                   WRITE     FXREC
-     C                   ADD       1             W#CNTR
-
+     C                   EVAL      W#CNTR = W#CNTR + 1
      C                   EVAL      RATEDATE = WDATE8
      C                   EVAL      FROMCUR = 'KRW'
      C                   EVAL      TOCUR = 'KRW'
@@ -292,14 +232,9 @@
      C                   EVAL      CRTDATE = WDATE8
      C                   EVAL      CRTTIM = WTIME6
      C                   WRITE     FXREC
-     C                   ADD       1             W#CNTR
+     C                   EVAL      W#CNTR = W#CNTR + 1
      C                   ENDSR
-
-      *=====================================================================
-      * サブルーチン: @END - 終了処理
-      *=====================================================================
      C     @END          BEGSR
      C                   EVAL      *INLR = *ON
      C                   RETURN
      C                   ENDSR
-

@@ -1,93 +1,58 @@
-             PGM
-/*=====================================================================*/
-/* プログラム名: INITDATA                                               */
-/* 説明: 初期マスタデータの投入                                          */
-/* ライブラリ: HANBAI                                                  */
-/* 作成日: 2025-01-18                                                   */
-/*=====================================================================*/
+             PGM        PARM(&LIBP)
+/*=================================================================*/
+/* プログラム: INITDATA                                             */
+/* 概要  : 初期マスターデータ投入                             */
+/* 修正#LIB: ライブラリー名をパラメーターで受け取る(例 O2CDEMO)    */
+/* 作成日  : 2025-01-18                                           */
+/*=================================================================*/
 
+             DCL        VAR(&LIBP) TYPE(*CHAR) LEN(10)
+             DCL        VAR(&LIB) TYPE(*CHAR) LEN(10)
              DCL        VAR(&MSGID) TYPE(*CHAR) LEN(7)
              DCL        VAR(&MSGDTA) TYPE(*CHAR) LEN(512)
 
              MONMSG     MSGID(CPF0000) EXEC(GOTO CMDLBL(ERROR))
 
-/*---------------------------------------------------------------------*/
-/* 開始メッセージ                                                       */
-/*---------------------------------------------------------------------*/
-             SNDPGMMSG  MSG('初期データ投入を開始します') TOPGMQ(*EXT) MSGTYPE(*INFO)
+/* 修正#LIB: ライブラリー名はパラメーターで受け取る(例 O2CDEMO)    */
+             CHGVAR     VAR(&LIB) VALUE(&LIBP)
+             MONMSG     MSGID(MCH3601) EXEC(DO)
+             SNDPGMMSG  MSGID(CPF9898) MSGF(QCPFMSG) +
+                          MSGDTA('ライブラリー名を指定してください') +
+                          MSGTYPE(*ESCAPE)
+             ENDDO
 
-/*---------------------------------------------------------------------*/
-/* 1. コードマスタの投入                                                */
-/*---------------------------------------------------------------------*/
-             SNDPGMMSG  MSG('コードマスタを投入中...') TOPGMQ(*EXT) MSGTYPE(*INFO)
+             SNDPGMMSG  MSG('初期データ投入を開始しました') +
+                          TOPGMQ(*EXT) MSGTYPE(*INFO)
 
-             CALL       PGM(HANBAI/INITCODE)
+             CALL       PGM(&LIB/INITCODE)
              MONMSG     MSGID(CPF0000) EXEC(GOTO CMDLBL(ERROR))
 
-/*---------------------------------------------------------------------*/
-/* 2. 倉庫マスタの投入                                                  */
-/*---------------------------------------------------------------------*/
-             SNDPGMMSG  MSG('倉庫マスタを投入中...') TOPGMQ(*EXT) MSGTYPE(*INFO)
-
-             CALL       PGM(HANBAI/INITWH)
+             CALL       PGM(&LIB/INITWH)
              MONMSG     MSGID(CPF0000) EXEC(GOTO CMDLBL(ERROR))
 
-/*---------------------------------------------------------------------*/
-/* 3. 顧客マスタの投入                                                  */
-/*---------------------------------------------------------------------*/
-             SNDPGMMSG  MSG('顧客マスタを投入中...') TOPGMQ(*EXT) MSGTYPE(*INFO)
-
-             CALL       PGM(HANBAI/INITCUST)
+             CALL       PGM(&LIB/INITCUST)
              MONMSG     MSGID(CPF0000) EXEC(GOTO CMDLBL(ERROR))
 
-/*---------------------------------------------------------------------*/
-/* 4. 商品マスタの投入                                                  */
-/*---------------------------------------------------------------------*/
-             SNDPGMMSG  MSG('商品マスタを投入中...') TOPGMQ(*EXT) MSGTYPE(*INFO)
-
-             CALL       PGM(HANBAI/INITITEM)
+             CALL       PGM(&LIB/INITITEM)
              MONMSG     MSGID(CPF0000) EXEC(GOTO CMDLBL(ERROR))
 
-/*---------------------------------------------------------------------*/
-/* 5. 為替レートの投入                                                  */
-/*---------------------------------------------------------------------*/
-             SNDPGMMSG  MSG('為替レートを投入中...') TOPGMQ(*EXT) MSGTYPE(*INFO)
-
-             CALL       PGM(HANBAI/INITFX)
+             CALL       PGM(&LIB/INITFX)
              MONMSG     MSGID(CPF0000) EXEC(GOTO CMDLBL(ERROR))
 
-/*---------------------------------------------------------------------*/
-/* 6. 在庫データの投入                                                  */
-/*---------------------------------------------------------------------*/
-             SNDPGMMSG  MSG('在庫データを投入中...') TOPGMQ(*EXT) MSGTYPE(*INFO)
-
-             CALL       PGM(HANBAI/INITINV)
+             CALL       PGM(&LIB/INITINV)
              MONMSG     MSGID(CPF0000) EXEC(GOTO CMDLBL(ERROR))
 
-/*---------------------------------------------------------------------*/
-/* 7. アプリケーションユーザーの投入                                     */
-/*---------------------------------------------------------------------*/
-             SNDPGMMSG  MSG('アプリケーションユーザーを投入中...') TOPGMQ(*EXT) MSGTYPE(*INFO)
-
-             CALL       PGM(HANBAI/INITUSER)
+             CALL       PGM(&LIB/INITUSER)
              MONMSG     MSGID(CPF0000) EXEC(GOTO CMDLBL(ERROR))
 
-/*---------------------------------------------------------------------*/
-/* 完了メッセージ                                                       */
-/*---------------------------------------------------------------------*/
-             SNDPGMMSG  MSG('初期データ投入が正常に完了しました') TOPGMQ(*EXT) MSGTYPE(*COMP)
+             SNDPGMMSG  MSG('初期データ投入が完了しました') +
+                          TOPGMQ(*EXT) MSGTYPE(*COMP)
 
              GOTO       CMDLBL(ENDPGM)
 
-/*---------------------------------------------------------------------*/
-/* エラー処理                                                           */
-/*---------------------------------------------------------------------*/
  ERROR:      RCVMSG     MSGTYPE(*EXCP) MSGDTA(&MSGDTA) MSGID(&MSGID)
+             SNDPGMMSG  MSG('初期データ投入エラー') +
+                          TOPGMQ(*EXT) MSGTYPE(*DIAG)
 
-             SNDPGMMSG  MSG('初期データ投入でエラーが発生しました') TOPGMQ(*EXT) MSGTYPE(*DIAG)
-
-/*---------------------------------------------------------------------*/
-/* プログラム終了                                                       */
-/*---------------------------------------------------------------------*/
- ENDPGM:     ENDPGM
+ ENDPGM:    ENDPGM
 

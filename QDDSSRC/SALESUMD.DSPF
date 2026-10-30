@@ -1,0 +1,94 @@
+     A* ==========================================================
+     A* SALESUMD - 売上・入金の月次集計の画面
+     A* 修正#SUM: 新規作成。SALESUM から使う
+     A*   全角の定数の直後は1桁空けて項目を置く(SIと属性桁の重なり防止)
+     A*   定数・項目どうしも属性の1桁を空ける(重なると表示されない)
+     A* ==========================================================
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      CA03(03 'F3=終了')
+     A                                      CA12(12 'F12=戻る')
+     A                                      PRINT
+     A* ---- MSFL - 月別(12か月) ----
+     A          R MSFL                      SFL
+     A            MOPT           1A  B  8  2DSPATR(UL)
+     A                                      VALUES(' ' '5')
+     A            MYM            7A  O  8  4COLOR(GRN)
+     A            MCNT           6A  O  8 12
+     A            MSALES        14A  O  8 19
+     A            MTAX          12A  O  8 34
+     A            MTOT          14A  O  8 47
+     A            MPAY          14A  O  8 62
+     A            MYMH           6S 0H      
+     A          R MCTL                      SFLCTL(MSFL)
+     A                                      SFLSIZ(0012)
+     A                                      SFLPAG(0012)
+     A  91                                  SFLDSP
+     A  92                                  SFLDSPCTL
+     A  93                                  SFLCLR
+     A                                      OVERLAY
+     A                                  1  2'売上・入金の月次集計'
+     A                                      DSPATR(HI)
+     A                                  1 70DATE(*SYS) EDTCDE(Y)
+     A                                  3  2'終了年月'
+     A            MEND           6A  B  3 13DSPATR(UL)
+     A  31                                  DSPATR(RI PC)
+     A                                  3 21'(YYYYMM。この月までの12か月)'
+     A                                      COLOR(BLU)
+     A                                  4  2'5=顧客別の内訳  Enter=表示'
+     A                                      COLOR(BLU)
+     A                                  5  2'金額は円換算(取引日のレート)'
+     A                                      COLOR(BLU)
+     A                                  7  4'年月'
+     A                                  7 13'件数'
+     A                                  7 23'売上(税抜)'
+     A                                  7 40'消費税'
+     A                                  7 53'請求合計'
+     A                                  7 70'入金額'
+     A* ---- MFOOT - 合計・メッセージ・キー ----
+     A          R MFOOT                     
+     A                                 20  4'合計'
+     A                                      COLOR(WHT)
+     A            TCNT           6A  O 20 12DSPATR(HI)
+     A            TSALES        14A  O 20 19DSPATR(HI)
+     A            TTAX          12A  O 20 34DSPATR(HI)
+     A            TTOT          14A  O 20 47DSPATR(HI)
+     A            TPAY          14A  O 20 62DSPATR(HI)
+     A            MMSG          78A  O 22  2COLOR(RED)
+     A                                 23  2'F3=終了'
+     A                                      COLOR(BLU)
+     A* ---- CSFL - 顧客別(選んだ月) ----
+     A          R CSFL                      SFL
+     A            CCUST         10A  O  8  2COLOR(GRN)
+     A            CNAME         16A  O  8 13
+     A            CCNT           4A  O  8 30
+     A            CSALES        12A  O  8 35
+     A            CTAX          10A  O  8 48
+     A            CTOT          12A  O  8 59
+     A            CPAY           9A  O  8 72
+     A          R CCTL                      SFLCTL(CSFL)
+     A                                      SFLSIZ(0999)
+     A                                      SFLPAG(0013)
+     A  81                                  SFLDSP
+     A  82                                  SFLDSPCTL
+     A  83                                  SFLCLR
+     A  84                                  SFLEND(*MORE)
+     A                                      OVERLAY
+     A                                  1  2'顧客別の内訳'
+     A                                      DSPATR(HI)
+     A                                  1 70DATE(*SYS) EDTCDE(Y)
+     A                                  3  2'年月'
+     A            CYM            7A  O  3  9DSPATR(HI)
+     A                                  3 20'金額は円換算'
+     A                                      COLOR(BLU)
+     A                                  7  2'顧客'
+     A                                  7 13'顧客名'
+     A                                  7 30'件数'
+     A                                  7 37'売上(税抜)'
+     A                                  7 52'消費税'
+     A                                  7 61'請求合計'
+     A                                  7 72'入金額'
+     A* ---- CFOOT ----
+     A          R CFOOT                     
+     A            CMSG          78A  O 22  2COLOR(RED)
+     A                                 23  2'F3=終了  F12=戻る'
+     A                                      COLOR(BLU)

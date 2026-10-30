@@ -1,0 +1,57 @@
+     A* ==========================================================
+     A* BILLCLSD - 請求締め 画面
+     A* 修正#CLS: 新規作成
+     A*   全角の定数の直後は1桁空けて項目を置く(SIと属性桁の重なり防止)
+     A* ==========================================================
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      CA03(03 'F3=終了')
+     A                                      CA12(12 'F12=戻る')
+     A                                      PRINT
+     A* --- 顧客一覧 ---
+     A          R CLSSFL                    SFL
+     A            SOPT           1A  B  8  2DSPATR(UL)
+     A                                      VALUES(' ' '1')
+     A            SCUSTCD       12A  O  8  4COLOR(GRN)
+     A            SCUSTNM       10A  O  8 17
+     A* 修正#CUR: 金額は顧客の通貨
+     A            SCUR           3A  O  8 28
+     A            SDAY           2Y 0B  8 33EDTCDE(3)
+     A                                      DSPATR(UL)
+     A  46                                  DSPATR(RI PC)
+     A            SLAST         10A  O  8 37
+     A            SCARRY         8Y 0O  8 48EDTCDE(N)
+     A            STOTAL         8Y 0O  8 60EDTCDE(N)
+     A            SSTAT          8A  O  8 72
+     A            SCUSTID        9S 0H      
+     A            SDAYORG        2S 0H      
+     A            SSTATCD        1A  H      
+     A          R CLSCTL                    SFLCTL(CLSSFL)
+     A                                      SFLSIZ(0999)
+     A                                      SFLPAG(0013)
+     A  91                                  SFLDSP
+     A  92                                  SFLDSPCTL
+     A  93                                  SFLCLR
+     A  94                                  SFLEND(*MORE)
+     A                                  1  2'請求締め'
+     A                                      DSPATR(HI)
+     A                                  1 70DATE(*SYS) EDTCDE(Y)
+     A                                  3  2'締め日'
+     A            CLSDT          8Y 0B  3 11DSPATR(UL)
+     A  31                                  DSPATR(RI PC)
+     A                                  3 22'締日が合う顧客が対象(0=末日)'
+     A                                  4  2'1=締め実行'
+     A                                      COLOR(GRN)
+     A                                  4 16'締日を変更してEnter=保存'
+     A                                      COLOR(BLU)
+     A                                  4 45'F3=終了'
+     A                                      COLOR(BLU)
+     A            CMSG          75A  O  5  2COLOR(RED)
+     A                                  6 27'通貨'
+     A                                  7  1'選'
+     A                                  7  6'コード'
+     A                                  7 17'顧客名'
+     A                                  7 30'締日'
+     A                                  7 37'前回締日'
+     A                                  7 51'繰越額'
+     A                                  7 61'今回請求'
+     A                                  7 72'状態'

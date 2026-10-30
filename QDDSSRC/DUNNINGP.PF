@@ -1,0 +1,37 @@
+      *===============================================================
+      * 物理ファイル: DUNNINGP (督促履歴)
+      * 説明: 督促状の発行履歴。1回の発行で1レコード
+      *       修正#DUN 新規作成
+      *===============================================================
+     A                                      UNIQUE
+     A          R DUNREC
+     A                                      TEXT('督促履歴レコード')
+     A*
+     A* キーフィールド
+     A            DUNID         18P 0       COLHDG('督促ID')
+     A                                      TEXT('督促ID')
+     A*
+     A* 督促の内容
+     A            CUSTID         9P 0       COLHDG('顧客ID')
+     A                                      TEXT('顧客ID')
+     A            DUNDATE        8P 0       COLHDG('督促日')
+     A                                      TEXT('督促日(基準日)')
+     A            DUNLEVEL       3P 0       COLHDG('督促' '回数')
+     A                                      TEXT('督促回数(1=初回)')
+     A            INVCNT         5P 0       COLHDG('請求' '件数')
+     A                                      TEXT('対象請求書の件数')
+     A            DUNAMT        15P 2       COLHDG('督促金額')
+     A                                      TEXT('期限超過の未収残高')
+     A            MAXDAYS        5P 0       COLHDG('最大' '超過日数')
+     A                                      TEXT('最大の期限超過日数')
+     A*
+     A* 監査情報
+     A            CRTUSER       30O         COLHDG('作成者')
+     A                                      TEXT('作成ユーザー')
+     A            CRTDATE        8P 0       COLHDG('作成日')
+     A                                      TEXT('作成日付')
+     A            CRTTIM         6P 0       COLHDG('作成時刻')
+     A                                      TEXT('作成時刻')
+     A*
+     A* キー定義
+     A          K DUNID

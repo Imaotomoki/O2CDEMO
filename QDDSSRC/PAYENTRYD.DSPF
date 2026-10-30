@@ -1,0 +1,224 @@
+     A*==========================================================
+     A* Mod#MSG: ERRMSGキーワード(エラー行/キーボードロック)を廃止し
+     A*          DSPATR(RI PC)+ERRMSG項目で表示(全角の文字化け対策)
+     A* PAYENTRYD - 入金処理画面 DSPF
+     A* Mod#F4: CA04 + Customer search window
+     A* 修正#SEL: F6はCF06(1=選択の入力を受け取るため)
+     A*==========================================================
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      CA03(03 'F3=End')
+     A* 修正#F4P: CF04(F4でも入力を返す。カーソル位置で検索先)
+     A                                      CF04(04 'F4=Srch')
+     A                                      CF06(06 'F6=Reg')
+     A                                      CA12(12 'F12=Bk')
+     A                                      PRINT
+     A                                      ERRSFL
+     A*---------------------------------------------------------
+     A* INVSFL - 請求一覧 SFL (行17-22 SFLPAG=6, 23行目=続く)
+     A*   制御レコードの項目はSFLの上にだけ置く(上下で挟むとCPD7xxx)
+     A* Mod#P9: 1件/ページ・行22開始・80桁超えを解消
+     A*---------------------------------------------------------
+     A          R INVSFL                    SFL
+     A* Mod#SEL: 1=消込先として選択(未選択なら古い順に消込)
+     A            SFLOPT         1A  B 17  2DSPATR(UL)
+     A                                      VALUES(' ' '1')
+     A            SFLINVNO      20A  O 17  4COLOR(GRN)
+     A* Mod#YEN: 円は小数なし・カンマ区切りで表示
+     A            SFLINVDT       8Y 0O 17 25EDTCDE(Z)
+     A* 修正#CUR: 金額は編集済みの文字(円は小数なし、外貨は小数2桁)
+     A*           サブファイルの項目には条件標識を付けられないため
+     A            SFLTOTAM      15A  O 17 34
+     A            SFLPAIDM      15A  O 17 50
+     A            SFLBALM       15A  O 17 66
+     A  41                                  COLOR(TRQ)
+     A            SFLINVID      18S 0H
+     A* Mod#SEL: 選択した請求書の残高合計(小数あり)
+     A            SFLBALH       15S 2H
+     A*---------------------------------------------------------
+     A* INVSFLCTL - SFL制御
+     A*---------------------------------------------------------
+     A          R INVSFLCTL                 SFLCTL(INVSFL)
+     A                                      SFLSIZ(0020)
+     A                                      SFLPAG(0006)
+     A  91                                  SFLDSP
+     A  92                                  SFLDSPCTL
+     A  93                                  SFLCLR
+     A  94                                  SFLEND(*MORE)
+     A            SFLRRN         4S 0H
+     A                                  1  2'入金処理'
+     A                                      DSPATR(HI)
+     A                                  1 70DATE(*SYS)
+     A                                      EDTCDE(Y)
+     A                                  2 70TIME
+     A                                  3  2'==================================+
+     A                                      ===================================+
+     A                                      ========='
+     A                                  5  2'顧客コード:'
+     A                                  7  2'入金日  :'
+     A                                  8  2'入金方法:'
+     A                                  9  2'通貨    :'
+     A                                 10  2'参照番号:'
+     A            CUSTCD_D      20A  O  5 16COLOR(TRQ)
+     A            CUSTNM_D      30A  O  6 16COLOR(TRQ)
+     A            PAYDATE_D      8A  O  7 16COLOR(TRQ)
+     A            PAYMETH_D     20A  O  8 16COLOR(TRQ)
+     A            CURRCD_D       3A  O  9 16COLOR(TRQ)
+     A            REFNO_D       30A  O 10 16COLOR(TRQ)
+     A                                 12  2'==================================+
+     A                                      ===================================+
+     A                                      ========='
+     A                                 13  2'入金額  :'
+     A                                      COLOR(GRN)
+     A* Mod#YEN: JPYは小数なし(45)、外貨は小数2桁
+     A N45        AMOUNT_D      15Y 2O 13 16EDTCDE(1)
+     A                                      DSPATR(HI)
+     A                                      COLOR(TRQ)
+     A  45        AMOUNT_DJ     13Y 0O 13 16EDTCDE(1)
+     A                                      DSPATR(HI)
+     A                                      COLOR(TRQ)
+     A  45                             13 36'円'
+     A                                      COLOR(GRN)
+     A                                 14  2'==================================+
+     A                                      ===================================+
+     A                                      ========='
+     A                                 15  1'選'
+     A                                 15  6'請求番号'
+     A                                 15 25'請求日'
+     A                                 15 40'請求金額'
+     A                                 15 58'入金済'
+     A                                 15 71'未収残高'
+     A                                  4  2'1=消込先を選択（未選択は古い順）'
+     A                                      COLOR(GRN)
+     A                                 16  2'==================================+
+     A                                      ===================================+
+     A                                      ========='
+     A            ERRMSG_D      50A  O 11  2DSPATR(HI)
+     A                                      COLOR(RED)
+     A                                  2  2'F3=終了 F6=登録 F12=戻る'
+     A                                      COLOR(TRQ)
+     A*---------------------------------------------------------
+     A* HEADER - ヘッダー入力
+     A*---------------------------------------------------------
+     A          R HEADER
+     A* 修正#F4P: F4を押した時のカーソルの項目名を返す
+     A                                      RTNCSRLOC(&CSRRCD &CSRFLD)
+     A            CSRRCD        10A  H
+     A            CSRFLD        10A  H
+     A                                  1  2'入金処理'
+     A                                      DSPATR(HI)
+     A                                  1 70DATE(*SYS)
+     A                                      EDTCDE(Y)
+     A                                  2 70TIME
+     A                                  3  2'==================================+
+     A                                      ===================================+
+     A                                      ========='
+     A                                  5  2'顧客コード:'
+     A            CUSTCD        20A  B  5 16DSPATR(UL)
+     A                                      DSPATR(MDT)
+     A  31                                  DSPATR(RI PC)
+     A            CUSTNM        40A  O  6 16DSPATR(HI)
+     A                                      COLOR(TRQ)
+     A                                  7  2'入金日  :'
+     A            PAYDATE        8A  B  7 16DSPATR(UL)
+     A  32                                  DSPATR(RI PC)
+     A                                  8  2'入金方法:'
+     A            PAYMETH       20A  B  8 16DSPATR(UL)
+     A  33                                  DSPATR(RI PC)
+     A                                  9  2'通貨    :'
+     A            CURRCD         3A  B  9 16DSPATR(UL)
+     A  34                                  DSPATR(RI PC)
+     A                                 10  2'参照番号:'
+     A            REFNO         30A  B 10 16DSPATR(UL)
+     A                                 11  2'入金額  :'
+     A            AMOUNT        15A  B 11 16DSPATR(UL)
+     A  35                                  DSPATR(RI PC)
+     A                                 14  2'==================================+
+     A                                      ===================================+
+     A                                      ========='
+     A            ERRMSG        78A  O 23  2DSPATR(HI)
+     A                                      COLOR(RED)
+     A* Mod#JP: 英語の表記を日本語に統一
+     A                                 24  2'F3=終了 F4=検索 F12=戻る'
+     A                                      COLOR(TRQ)
+     A                                 24 34'Enter=次へ'
+     A                                      COLOR(TRQ)
+     A*---------------------------------------------------------
+     A* CONFIRM - 確認画面(OVERLAY)
+     A*---------------------------------------------------------
+     A          R CONFIRM                   OVERLAY
+     A                                  1  2'入金確認'
+     A                                      DSPATR(HI)
+     A                                  1 70DATE(*SYS)
+     A                                      EDTCDE(Y)
+     A                                  2 70TIME
+     A                                  3  2'==================================+
+     A                                      ===================================+
+     A                                      ========='
+     A                                  5  2'顧客コード:'
+     A                                  7  2'入金日  :'
+     A                                  8  2'入金方法:'
+     A                                  9  2'通貨    :'
+     A                                 10  2'参照番号:'
+     A            CUSTCD_C      20A  O  5 16COLOR(TRQ)
+     A            CUSTNM_C      40A  O  6 16COLOR(TRQ)
+     A            PAYDAT_C       8A  O  7 16COLOR(TRQ)
+     A            PAYMTH_C      20A  O  8 16COLOR(TRQ)
+     A            CURRCD_C       3A  O  9 16COLOR(TRQ)
+     A            REFNO_C       30A  O 10 16COLOR(TRQ)
+     A                                 12  2'==================================+
+     A                                      ===================================+
+     A                                      ========='
+     A                                 13  2'登録しますか?'
+     A                                      DSPATR(HI)
+     A                                 14  2'入金額  :'
+     A                                      COLOR(GRN)
+     A N45        AMOUNT_C      15Y 2O 14 16EDTCDE(1)
+     A                                      DSPATR(HI)
+     A                                      COLOR(TRQ)
+     A  45        AMOUNT_CJ     13Y 0O 14 16EDTCDE(1)
+     A                                      DSPATR(HI)
+     A                                      COLOR(TRQ)
+     A  45                             14 36'円'
+     A                                      COLOR(GRN)
+     A                                 23  2'Enter=登録'
+     A                                      COLOR(TRQ)
+     A                                 23 18'F12=入力へ戻る'
+     A                                      COLOR(TRQ)
+     A*---------------------------------------------------------
+     A* COMPLETE - 完了画面(OVERLAY 行23-24)
+     A*---------------------------------------------------------
+     A          R COMPLETE                  OVERLAY
+     A                                 23  2'入金登録完了'
+     A                                      DSPATR(HI)
+     A                                      COLOR(GRN)
+     A                                 24  2'入金番号:'
+     A            PAYNUM        20A  O 24 16DSPATR(HI)
+     A                                 23 40'Enter=継続 F3=終了'
+     A                                      COLOR(TRQ)
+     A*
+     A*----------------------------------------------------------
+     A* CUSTSFL/CUSTSFLCTL - Customer search window (F4)
+     A* WINDOW: row3 col2, height12 width70
+     A* Mod#P1: 幅76は枠を含め80桁を超えCPF500Bになるため70に変更
+     A*----------------------------------------------------------
+     A          R CUSTSFL                   SFL
+     A            CSFOPT         1A  B  5  3DSPATR(UL)
+     A                                      VALUES(' ' '1')
+     A            CSFCD         20A  O  5  7COLOR(GRN)
+     A            CSFNM         36A  O  5 29COLOR(TRQ)
+     A          R CUSTSFLCTL                SFLCTL(CUSTSFL)
+     A                                      SFLSIZ(0020)
+     A                                      SFLPAG(0006)
+     A                                      WINDOW(3 2 12 70)
+     A  71                                  SFLDSP
+     A  72                                  SFLDSPCTL
+     A  73                                  SFLCLR
+     A            CSFRRN         4S 0H
+     A                                  1  2'顧客検索'
+     A                                      DSPATR(HI)
+     A                                  2  2'顧客コード（前方一致）'
+     A            CSFSRCH       20A  B  2 27DSPATR(UL)
+     A                                  3  2'F12=取消 1=選択 Enter=再検索'
+     A                                      COLOR(TRQ)
+     A                                  4  7'顧客コード'
+     A                                  4 29'顧客名'

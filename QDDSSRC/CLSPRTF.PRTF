@@ -1,0 +1,67 @@
+     A* ==========================================================
+     A* CLSPRTF - 合計請求書 印刷ファイル
+     A* 修正#CLS: 新規作成。顧客1社につき1枚
+     A* ==========================================================
+     A          R PHEAD                     SKIPB(3)
+     A                                    44'合　計　請　求　書' HIGHLIGHT
+     A                                    80'締め日'
+     A            PCLSDT        10A       88
+     A            PCUSTNM       60O        4
+     A                                      SPACEB(2)
+     A                                    66'御中'
+     A            PBILLADR      60O        4
+     A                                      SPACEB(1)
+     A                                     4'対象期間'
+     A                                      SPACEB(2)
+     A            PFROM         10A       14
+     A                                    25'～'
+     A            PTO           10A       30
+     A                                    50'通貨'
+     A            PCURH          3A       56
+     A                                     4'前回御請求額'
+     A                                      SPACEB(2)
+     A                                    24'御入金額'
+     A                                    40'繰越金額'
+     A                                    52'今回お買上額'
+     A                                    72'消費税額'
+     A                                    84'今回御請求額'
+     A* 改行は条件のない空白の定数に付ける
+     A                                     1' '
+     A                                      SPACEB(1)
+     A N50        PPREV         11S 0      4EDTCDE(N)
+     A  50        PPREVF        15A        4
+     A N50        PPAY          11S 0     20EDTCDE(N)
+     A  50        PPAYF         15A       20
+     A N50        PCARRY        11S 0     36EDTCDE(N)
+     A  50        PCARRYF       15A       36
+     A N50        PSALES        11S 0     52EDTCDE(N)
+     A  50        PSALESF       15A       52
+     A N50        PTAX          11S 0     68EDTCDE(N)
+     A  50        PTAXF         15A       68
+     A N50        PTOTAL        11S 0     84EDTCDE(N)
+     A                                      HIGHLIGHT
+     A  50        PTOTALF       15A       84
+     A                                      HIGHLIGHT
+     A                                     4'請求番号'
+     A                                      SPACEB(2)
+     A                                    26'請求日'
+     A                                    42'税抜金額'
+     A                                    60'消費税'
+     A                                    78'合計'
+     A                                     4'--------------------------'
+     A                                      SPACEB(1)
+     A                                    30'--------------------------'
+     A                                    56'----------------------------'
+     A* 期間内の請求書
+     A          R PDETAIL                   SPACEB(1)
+     A            PINVNUM       20A        4
+     A            PINVDT        10A       26
+     A N50        PISUB         11S 0     38EDTCDE(N)
+     A  50        PISUBF        15A       38
+     A N50        PITAX         11S 0     54EDTCDE(N)
+     A  50        PITAXF        15A       54
+     A N50        PITOT         11S 0     70EDTCDE(N)
+     A  50        PITOTF        15A       70
+     A* 請求書がないとき
+     A          R PNONE                     SPACEB(1)
+     A                                     4'対象期間のお買上はありません'

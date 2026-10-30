@@ -6,16 +6,29 @@
       * 変更履歴:
       *   修正#3 @ALCINV - INVENTORYP のCHAINキーを W#WHID 単体から
       *          複合キー INVKEY(W#WHID+W#ITEMID) に変更
-      *          理由: INVENTORYPの主キーはWHID+ITEMIDの複合キーのため
-      *               W#WHID単体では同一倉庫の先頭商品が誤って引当てされる
+      *   修正#R1 @GENSOID - タイムスタンプ採番を SQL シーケンスに変更
+      *           (重複リスク解消)
+      *   修正#R5 *ENTRY PLIST 追加 - CUSTID/WHID/TAXRATE をパラメータ化
+      *           @INZ のハードコード廃止
+      *   修正#R12 @PRCHDR - 監査ユーザーを USER 特殊レジスタに変更
+      *   修正#R14 @PRCLN1-3廃止 - 明細配列をパラメータで受取
+      *            ITEMID/ORDQTY/UNITPRC 各20要素配列 + 件数を追加
+      *   修正#SEQ @GENSOID - シーケンス名の修飾を外しSQLCODEを確認
+      *   修正#CMT 受注/明細/在庫をコミットメント制御で一括確定
+      *            エラー時はROLBKしCPF9898エスケープで呼び出し元へ通知
+      *   修正#HDR 明細を先に処理し合計金額(TOTAMT)を設定してヘッダ書込
+      *            希望納期は日付演算(従来はYYYYMMDD+10で無効日付)
+      *            明細金額は税抜(ORDERENTRY/請求書と統一)
+      *   修正#NODSP DSPLYを廃止(バッチ実行で応答待ちになるため)
       *=====================================================================
 
       *---------------------------------------------------------------
       * ファイル定義
       *---------------------------------------------------------------
-     FSORDERHP  O    E             DISK
-     FSORDERLP  O    E             DISK
-     FINVENTORYPUF   E           K DISK
+      * 修正#CMT: コミットメント制御下で更新(STRCMTCTL後に開くためUSROPN)
+     FSORDERHP  O    E             DISK    COMMIT USROPN
+     FSORDERLP  O    E             DISK    COMMIT USROPN
+     FINVENTORYPUF   E           K DISK    COMMIT USROPN
      FITEMP     IF   E           K DISK    PREFIX(ITM_)
      FCUSTOMERP IF   E           K DISK    PREFIX(CUST_)
 
@@ -33,13 +46,42 @@
      D W#FOUND         S               N
      D W#ERROR         S               N
      D W#ERRMSG        S             52A
-      * テストデータ用変数
+      * [修正#R5] エントリパラメータ受取用変数
      D W#CUSTID        S              9P 0
      D W#WHID          S              4P 0
+     D W#TAXRATE       S              5P 3
+      * 明細処理用変数
      D W#ITEMID        S              9P 0
      D W#ORDQTY        S             15P 3
      D W#UNITPRC       S             15P 4
-     D W#TAXRATE       S              5P 3
+      * [修正#R12] 実行ユーザー取得用
+     D W#USER          S             10A
+      * [修正#R14] 明細配列パラメータ（最大20行）
+     D W#LINECOUNT     S             10I 0
+     D W#P_ITEMID      S              9P 0 DIM(20)
+     D W#P_ORDQTY      S             15P 3 DIM(20)
+     D W#P_UNITPRC     S             15P 4 DIM(20)
+      * ループカウンタ
+     D W#IDX           S             10I 0
+      * 修正#CMT: コミットメント制御開始/エスケープメッセージ送信用
+     D W#CMD           S            200A
+     D QCMDEXC         PR                  EXTPGM('QCMDEXC')
+     D   Cmd                        200A   CONST OPTIONS(*VARSIZE)
+     D   CmdLen                      15P 5 CONST
+     D W#MSGKEY        S              4A
+     D W#APIERR        DS
+     D   W#APIPRV                    10I 0 INZ(0)
+     D   W#APIAVL                    10I 0 INZ(0)
+     D QMHSNDPM        PR                  EXTPGM('QMHSNDPM')
+     D   MsgId                        7A   CONST
+     D   MsgFile                     20A   CONST
+     D   MsgDta                      52A   CONST
+     D   MsgDtaLen                   10I 0 CONST
+     D   MsgType                     10A   CONST
+     D   CallStk                     10A   CONST
+     D   CallStkCtr                  10I 0 CONST
+     D   MsgKey                       4A
+     D   ErrCode                      8A
 
       *---------------------------------------------------------------
       * キーリスト: 在庫複合キー（WHID + ITEMID）
@@ -50,6 +92,20 @@
      C                   KFLD                    W#ITEMID
 
       *=====================================================================
+      * エントリパラメータ
+      * [修正#R5] CUSTID / WHID / TAXRATE をパラメータとして受け取る
+      * [修正#R14] 明細件数・ITEMID・ORDQTY・UNITPRC 配列を追加
+      *=====================================================================
+     C     *ENTRY        PLIST
+     C                   PARM                    W#CUSTID
+     C                   PARM                    W#WHID
+     C                   PARM                    W#TAXRATE
+     C                   PARM                    W#LINECOUNT
+     C                   PARM                    W#P_ITEMID
+     C                   PARM                    W#P_ORDQTY
+     C                   PARM                    W#P_UNITPRC
+
+      *=====================================================================
       * メインルーチン
       *=====================================================================
      C                   EXSR      @INZ
@@ -58,10 +114,15 @@
      C                   EXSR      @END
      C                   ENDIF
      C                   EXSR      @GENSOID
+     C                   IF        W#ERROR
+     C                   EXSR      @END
+     C                   ENDIF
+      * 修正#HDR: 明細(引当)を先に処理して合計を求めてからヘッダを書く
+     C                   EXSR      @PRCLINES
+     C                   IF        W#ERROR
+     C                   EXSR      @END
+     C                   ENDIF
      C                   EXSR      @PRCHDR
-     C                   EXSR      @PRCLN1
-     C                   EXSR      @PRCLN2
-     C                   EXSR      @PRCLN3
      C                   EXSR      @END
 
       *=====================================================================
@@ -74,10 +135,27 @@
      C                   EVAL      W#CNTR = *ZERO
      C                   EVAL      W#ERROR = *OFF
      C                   EVAL      W#TOTAMT = *ZERO
-      * テストデータ設定
-     C                   EVAL      W#CUSTID = 1
-     C                   EVAL      W#WHID = 1
-     C                   EVAL      W#TAXRATE = 0.100
+      * [修正#R12] 実行ユーザーをSQLで取得
+     C/EXEC SQL
+     C+   VALUES USER INTO :W#USER
+     C/END-EXEC
+      * [修正#R5] CUSTID/WHID/TAXRATE は *ENTRY PLIST で受け取る
+      * 修正#CMT: コミットメント制御を開始してから更新ファイルを開く
+     C                   EVAL      W#CMD = 'STRCMTCTL LCKLVL(*CHG) ' +
+     C                             'CMTSCOPE(*ACTGRP)'
+     C                   MONITOR
+     C                   CALLP     QCMDEXC(W#CMD:%LEN(%TRIMR(W#CMD)))
+     C                   ON-ERROR
+      * 既に開始済み(CPF8351)ならそのまま使う
+     C                   ENDMON
+     C                   OPEN      SORDERHP
+     C                   OPEN      SORDERLP
+     C                   OPEN      INVENTORYP
+      * 修正#CMT: 明細件数の範囲チェック(配列の範囲外参照を防止)
+     C                   IF        W#LINECOUNT < 1 OR W#LINECOUNT > 20
+     C                   EVAL      W#ERROR = *ON
+     C                   EVAL      W#ERRMSG = '明細件数が不正です(1-20)'
+     C                   ENDIF
      C                   ENDSR
 
       *=====================================================================
@@ -88,8 +166,7 @@
      C                   EVAL      W#FOUND = %FOUND(CUSTOMERP)
      C                   IF        NOT W#FOUND
      C                   EVAL      W#ERROR = *ON
-     C                   EVAL      W#ERRMSG = 'Customer not found'
-     C                   DSPLY                   W#ERRMSG
+     C                   EVAL      W#ERRMSG = '顧客が見つかりません'
      C                   ENDIF
      C                   ENDSR
 
@@ -97,8 +174,16 @@
       * サブルーチン: @GENSOID - 受注ID採番
       *=====================================================================
      C     @GENSOID      BEGSR
-      * タイムスタンプベースの採番（重複回避）
-     C                   EVAL      W#SOID = (WDATE8 * 1000000) + WTIME6
+      * [修正#R1] SQLシーケンスによる採番（重複リスク解消）
+      * 修正#SEQ: 'LIB/SEQ'の'/'は除算と解釈され採番に失敗
+      *           していた(0のまま登録)。修飾なしで*LIBLから解決する
+     C/EXEC SQL
+     C+   VALUES NEXT VALUE FOR O2C_SOID_SEQ INTO :W#SOID
+     C/END-EXEC
+     C                   IF        SQLCODE <> 0 OR W#SOID <= 0
+     C                   EVAL      W#ERROR = *ON
+     C                   EVAL      W#ERRMSG = '受注ID採番エラー'
+     C                   ENDIF
      C                   ENDSR
 
       *=====================================================================
@@ -106,75 +191,63 @@
       *=====================================================================
      C     @PRCHDR       BEGSR
      C                   EVAL      SOID = W#SOID
-     C                   EVAL      SONUM = 'SO-2025-0001'
+      * [修正#R5] 受注番号をシーケンス番号から生成
+     C                   EVAL      SONUM = 'SO-' + %CHAR(W#SOID)
      C                   EVAL      CUSTID = W#CUSTID
      C                   EVAL      ORDDATE = WDATE8
-     C                   EVAL      REQDATE = WDATE8 + 10
+      * 修正#HDR: 日付として10日後(従来は数値+10で無効日付になった)
+     C                   EVAL      REQDATE = %DEC(%DATE(WDATE8:*ISO) +
+     C                             %DAYS(10):*ISO)
      C                   EVAL      CURRCD = 'JPY'
      C                   EVAL      PAYTERM = 'NET30'
      C                   EVAL      WHID = W#WHID
      C                   EVAL      STATUS = 'ALLOCATED'
-     C                   EVAL      TOTAMT = *ZERO
-     C                   EVAL      CRTUSER = 'SYSTEM'
+      * 修正#HDR: 明細合計(税抜)
+     C                   EVAL      TOTAMT = W#TOTAMT
+      * [修正#R12] 監査ユーザーを実行ユーザーに変更
+     C                   EVAL      CRTUSER = W#USER
      C                   EVAL      CRTDATE = WDATE8
      C                   EVAL      CRTTIM = WTIME6
-     C                   EVAL      UPDUSER = 'SYSTEM'
+     C                   EVAL      UPDUSER = W#USER
      C                   EVAL      UPDDATE = WDATE8
      C                   EVAL      UPDTIM = WTIME6
-     C                   WRITE     SOHREC
-     C                   ADD       1             W#CNTR
+     C                   WRITE(E)  SOHREC
+     C                   IF        %ERROR
+     C                   EVAL      W#ERROR = *ON
+     C                   EVAL      W#ERRMSG = '受注ヘッダの登録に失敗'
+     C                   LEAVESR
+     C                   ENDIF
+     C                   EVAL      W#CNTR = W#CNTR + 1
      C                   ENDSR
 
       *=====================================================================
-      * サブルーチン: @PRCLN1 - 明細1処理
+      * サブルーチン: @PRCLINES - 全明細処理ループ
+      * [修正#R14] @PRCLN1-3廃止 - パラメータ配列をループで処理
       *=====================================================================
-     C     @PRCLN1       BEGSR
-     C                   EVAL      W#ITEMID = 1
-     C                   EVAL      W#ORDQTY = 10.000
-     C                   EVAL      W#UNITPRC = 1500.0000
-     C                   EXSR      @VLDITEM
-     C                   IF        W#ERROR
-     C                   RETURN
-     C                   ENDIF
-     C                   EXSR      @ALCINV
-     C                   IF        W#ERROR
-     C                   RETURN
-     C                   ENDIF
-     C                   EXSR      @WRTLINE
+     C     @PRCLINES     BEGSR
+     C                   EVAL      W#IDX = 1
+     C                   DOW       W#IDX <= W#LINECOUNT AND NOT W#ERROR
+     C                   EVAL      W#ITEMID = W#P_ITEMID(W#IDX)
+     C                   EVAL      W#ORDQTY = W#P_ORDQTY(W#IDX)
+     C                   EVAL      W#UNITPRC = W#P_UNITPRC(W#IDX)
+     C                   EXSR      @PRCLINE
+     C                   EVAL      W#IDX = W#IDX + 1
+     C                   ENDDO
      C                   ENDSR
 
       *=====================================================================
-      * サブルーチン: @PRCLN2 - 明細2処理
+      * サブルーチン: @PRCLINE - 明細共通処理
+      *   W#ITEMID / W#ORDQTY / W#UNITPRC がセットされていること
       *=====================================================================
-     C     @PRCLN2       BEGSR
-     C                   EVAL      W#ITEMID = 2
-     C                   EVAL      W#ORDQTY = 5.000
-     C                   EVAL      W#UNITPRC = 2800.0000
+     C     @PRCLINE      BEGSR
+      * 修正#CMT: RETURNは@END(ROLBK)を通らずに終わるためLEAVESR
      C                   EXSR      @VLDITEM
      C                   IF        W#ERROR
-     C                   RETURN
+     C                   LEAVESR
      C                   ENDIF
      C                   EXSR      @ALCINV
      C                   IF        W#ERROR
-     C                   RETURN
-     C                   ENDIF
-     C                   EXSR      @WRTLINE
-     C                   ENDSR
-
-      *=====================================================================
-      * サブルーチン: @PRCLN3 - 明細3処理
-      *=====================================================================
-     C     @PRCLN3       BEGSR
-     C                   EVAL      W#ITEMID = 3
-     C                   EVAL      W#ORDQTY = 20.000
-     C                   EVAL      W#UNITPRC = 850.0000
-     C                   EXSR      @VLDITEM
-     C                   IF        W#ERROR
-     C                   RETURN
-     C                   ENDIF
-     C                   EXSR      @ALCINV
-     C                   IF        W#ERROR
-     C                   RETURN
+     C                   LEAVESR
      C                   ENDIF
      C                   EXSR      @WRTLINE
      C                   ENDSR
@@ -187,46 +260,49 @@
      C                   EVAL      W#FOUND = %FOUND(ITEMP)
      C                   IF        NOT W#FOUND
      C                   EVAL      W#ERROR = *ON
-     C                   EVAL      W#ERRMSG = 'Item not found'
-     C                   DSPLY                   W#ERRMSG
+     C                   EVAL      W#ERRMSG = '商品が見つかりません'
+     C                   LEAVESR
+     C                   ENDIF
+      * 修正#CMT: 数量は正の値のみ
+     C                   IF        W#ORDQTY <= 0 OR W#UNITPRC < 0
+     C                   EVAL      W#ERROR = *ON
+     C                   EVAL      W#ERRMSG = '数量または単価が不正です'
      C                   ENDIF
      C                   ENDSR
 
       *=====================================================================
       * サブルーチン: @ALCINV - 在庫引当処理
       * [修正#3] W#WHID 単体のCHAINから INVKEY(W#WHID+W#ITEMID) に変更
-      *   変更前: C     W#WHID  CHAIN  INVENTORYP  99
-      *           → 同一倉庫の先頭レコード（異なる商品）を誤って引当てる危険
-      *   変更後: C     INVKEY  CHAIN  INVENTORYP  99
-      *           → 倉庫IDと商品IDの両方で特定し正しいレコードを引当てる
       *=====================================================================
      C     @ALCINV       BEGSR
      C     INVKEY        CHAIN     INVENTORYP                         99
      C                   IF        *IN99
      C                   EVAL      W#ERROR = *ON
-     C                   EVAL      W#ERRMSG = 'Inventory not found'
-     C                   DSPLY                   W#ERRMSG
-     C                   RETURN
+     C                   EVAL      W#ERRMSG = '在庫が見つかりません'
+     C                   LEAVESR
      C                   ENDIF
       * 引当可能数量チェック
      C                   IF        QTYAVL < W#ORDQTY
      C                   EVAL      W#ERROR = *ON
-     C                   EVAL      W#ERRMSG = 'Insufficient inventory'
-     C                   DSPLY                   W#ERRMSG
-     C                   RETURN
+     C                   EVAL      W#ERRMSG = '在庫数量が不足しています'
+     C                   LEAVESR
      C                   ENDIF
       * 引当数量更新
      C                   EVAL      QTYALC = QTYALC + W#ORDQTY
      C                   EVAL      QTYAVL = QTYOH - QTYALC
      C                   EVAL      LSTUPD = WTIMESTAMP
-     C                   UPDATE    INVREC
+     C                   UPDATE(E) INVREC
+     C                   IF        %ERROR
+     C                   EVAL      W#ERROR = *ON
+     C                   EVAL      W#ERRMSG = '在庫の更新に失敗しました'
+     C                   ENDIF
      C                   ENDSR
 
       *=====================================================================
       * サブルーチン: @WRTLINE - 明細書き込み
       *=====================================================================
      C     @WRTLINE      BEGSR
-     C                   ADD       1             W#LINENO
+     C                   EVAL      W#LINENO = W#LINENO + 1
      C                   EVAL      SOID = W#SOID
      C                   EVAL      LINENO = W#LINENO
      C                   EVAL      ITEMID = W#ITEMID
@@ -234,31 +310,39 @@
      C                   EVAL      UNITPRC = W#UNITPRC
      C                   EVAL      TAXRATE = W#TAXRATE
       * 明細金額計算
-     C                   EVAL      W#LINEAMT = W#ORDQTY * W#UNITPRC *
-     C                               (1 + W#TAXRATE)
+      * 修正#HDR: 税抜(税額は請求書発行時に税率から計算する)
+     C                   EVAL(H)   W#LINEAMT = W#ORDQTY * W#UNITPRC
      C                   EVAL      LINEAMT = W#LINEAMT
      C                   EVAL      ALCQTY = W#ORDQTY
      C                   EVAL      SHPQTY = *ZERO
      C                   EVAL      STATUS = 'ALLOCATED'
-     C                   WRITE     SOLREC
-     C                   ADD       1             W#CNTR
+     C                   WRITE(E)  SOLREC
+     C                   IF        %ERROR
+     C                   EVAL      W#ERROR = *ON
+     C                   EVAL      W#ERRMSG = '受注明細の登録に失敗'
+     C                   LEAVESR
+     C                   ENDIF
+     C                   EVAL      W#CNTR = W#CNTR + 1
       * 合計金額に加算
-     C                   ADD       W#LINEAMT     W#TOTAMT
+     C                   EVAL      W#TOTAMT = W#TOTAMT + W#LINEAMT
      C                   ENDSR
 
       *=====================================================================
       * サブルーチン: @END - 終了処理
       *=====================================================================
      C     @END          BEGSR
+      * 修正#CMT: 成功はCOMMIT、失敗はROLBKしてエスケープで通知
      C                   IF        NOT W#ERROR
-     C                   EVAL      W#ERRMSG = 'Order created successfully'
-     C                   DSPLY                   W#ERRMSG
-     C                   DSPLY                   W#CNTR
+     C                   COMMIT
      C                   ELSE
-     C                   EVAL      W#ERRMSG = 'Order creation failed'
-     C                   DSPLY                   W#ERRMSG
+     C                   IF        %OPEN(SORDERHP)
+     C                   ROLBK
+     C                   ENDIF
+     C                   EVAL      *INLR = *ON
+     C                   CALLP     QMHSNDPM('CPF9898':'QCPFMSG   *LIBL':
+     C                             W#ERRMSG:%LEN(%TRIMR(W#ERRMSG)):
+     C                             '*ESCAPE':'*PGMBDY':1:W#MSGKEY:W#APIERR)
      C                   ENDIF
      C                   EVAL      *INLR = *ON
      C                   RETURN
      C                   ENDSR
-

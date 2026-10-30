@@ -1,0 +1,40 @@
+     A* ==========================================================
+     A* O2CPRMD - 共通の検索ウィンドウ(F4)
+     A* 修正#F4P: 新規作成。O2CPRMPT から使う
+     A* 修正#FLT: 請求書の絞込欄を追加(1行広げた)
+     A*   全角の定数の直後は1桁空けて項目を置く(SIと属性桁の重なり防止)
+     A* ==========================================================
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      CA03(03 'F3=取消')
+     A                                      CA12(12 'F12=取消')
+     A          R PSFL                      SFL
+     A            POPT           1A  B  7  2DSPATR(UL)
+     A                                      VALUES(' ' '1')
+     A            PKEY          20A  O  7  4COLOR(GRN)
+     A            PNAME         38A  O  7 25
+     A            PKEYH         30A  H      
+     A          R PCTL                      SFLCTL(PSFL)
+     A                                      SFLSIZ(0999)
+     A                                      SFLPAG(0010)
+     A  91                                  SFLDSP
+     A  92                                  SFLDSPCTL
+     A  93                                  SFLCLR
+     A  94                                  SFLEND(*MORE)
+     A                                      WINDOW(2 6 18 66)
+     A            PTITLE        40A  O  1  2DSPATR(HI)
+     A                                  2  2'検索'
+     A            PSRCH         20O  B  2  9DSPATR(UL)
+     A                                  2 31'(コード前方一致/名前の一部)'
+     A                                  3  2'1=選択  Enter=検索  F12=取消'
+     A                                      COLOR(BLU)
+     A            PMSG          60A  O  4  2COLOR(RED)
+     A* 修正#FLT: 請求書(50)は絞込欄を出す
+     A  50                              5  2'絞込'
+     A  50        PFLT           1A  B  5  9DSPATR(UL)
+     A                                      VALUES(' ' '1' '2' '9')
+     A  50                              5 12'空白=取消以外'
+     A                                      COLOR(BLU)
+     A  50                              5 31'1=未収 2=期限超過 9=全部'
+     A                                      COLOR(BLU)
+     A                                  6  4'コード'
+     A                                  6 25'名称'

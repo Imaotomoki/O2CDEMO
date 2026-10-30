@@ -2,33 +2,16 @@
       *=====================================================================
       * プログラム名: INITWH
       * 説明: 倉庫マスタの初期データ投入
-      * ライブラリ: DEMOAPP
       *=====================================================================
-
-      *---------------------------------------------------------------
-      * ファイル定義
-      *---------------------------------------------------------------
      FWAREHOUSEPO    E             DISK
-
-      *---------------------------------------------------------------
-      * 変数定義
-      *---------------------------------------------------------------
      D WTIMESTAMP      S               Z
      D WDATE8          S              8S 0
      D WTIME6          S              6S 0
      D W#CNTR          S              9S 0
      D W#NXID          S              4S 0
-
-      *=====================================================================
-      * メインルーチン
-      *=====================================================================
      C                   EXSR      @INZ
      C                   EXSR      @WH
      C                   EXSR      @END
-
-      *=====================================================================
-      * サブルーチン: @INZ - 初期処理
-      *=====================================================================
      C     @INZ          BEGSR
      C                   TIME                    WTIMESTAMP
      C                   EVAL      WDATE8 = %DEC(%DATE(WTIMESTAMP):*ISO)
@@ -36,12 +19,7 @@
      C                   EVAL      W#CNTR = *ZERO
      C                   EVAL      W#NXID = 1
      C                   ENDSR
-
-      *=====================================================================
-      * サブルーチン: @WH - 倉庫データ投入
-      *=====================================================================
      C     @WH           BEGSR
-      * 東京物流センター
      C                   EVAL      WHID = W#NXID
      C                   EVAL      WHCD = 'WH-TOKYO'
      C                   EVAL      WHNM = '東京物流センター'
@@ -55,10 +33,8 @@
      C                   EVAL      UPDDATE = WDATE8
      C                   EVAL      UPDTIM = WTIME6
      C                   WRITE     WHREC
-     C                   ADD       1             W#CNTR
-     C                   ADD       1             W#NXID
-
-      * 大阪物流センター
+     C                   EVAL      W#CNTR = W#CNTR + 1
+     C                   EVAL      W#NXID = W#NXID + 1
      C                   EVAL      WHID = W#NXID
      C                   EVAL      WHCD = 'WH-OSAKA'
      C                   EVAL      WHNM = '大阪物流センター'
@@ -72,10 +48,8 @@
      C                   EVAL      UPDDATE = WDATE8
      C                   EVAL      UPDTIM = WTIME6
      C                   WRITE     WHREC
-     C                   ADD       1             W#CNTR
-     C                   ADD       1             W#NXID
-
-      * 名古屋物流センター
+     C                   EVAL      W#CNTR = W#CNTR + 1
+     C                   EVAL      W#NXID = W#NXID + 1
      C                   EVAL      WHID = W#NXID
      C                   EVAL      WHCD = 'WH-NAGOYA'
      C                   EVAL      WHNM = '名古屋物流センター'
@@ -89,10 +63,8 @@
      C                   EVAL      UPDDATE = WDATE8
      C                   EVAL      UPDTIM = WTIME6
      C                   WRITE     WHREC
-     C                   ADD       1             W#CNTR
-     C                   ADD       1             W#NXID
-
-      * 福岡物流センター
+     C                   EVAL      W#CNTR = W#CNTR + 1
+     C                   EVAL      W#NXID = W#NXID + 1
      C                   EVAL      WHID = W#NXID
      C                   EVAL      WHCD = 'WH-FUKUOKA'
      C                   EVAL      WHNM = '福岡物流センター'
@@ -106,10 +78,8 @@
      C                   EVAL      UPDDATE = WDATE8
      C                   EVAL      UPDTIM = WTIME6
      C                   WRITE     WHREC
-     C                   ADD       1             W#CNTR
-     C                   ADD       1             W#NXID
-
-      * 札幌物流センター（無効）
+     C                   EVAL      W#CNTR = W#CNTR + 1
+     C                   EVAL      W#NXID = W#NXID + 1
      C                   EVAL      WHID = W#NXID
      C                   EVAL      WHCD = 'WH-SAPPORO'
      C                   EVAL      WHNM = '札幌物流センター'
@@ -123,13 +93,9 @@
      C                   EVAL      UPDDATE = WDATE8
      C                   EVAL      UPDTIM = WTIME6
      C                   WRITE     WHREC
-     C                   ADD       1             W#CNTR
-     C                   ADD       1             W#NXID
+     C                   EVAL      W#CNTR = W#CNTR + 1
+     C                   EVAL      W#NXID = W#NXID + 1
      C                   ENDSR
-
-      *=====================================================================
-      * サブルーチン: @END - 終了処理
-      *=====================================================================
      C     @END          BEGSR
      C                   EVAL      *INLR = *ON
      C                   RETURN

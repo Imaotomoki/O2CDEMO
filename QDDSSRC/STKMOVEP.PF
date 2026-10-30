@@ -1,0 +1,41 @@
+      *===============================================================
+      * 物理ファイル: STKMOVEP (在庫移動履歴)
+      * 説明: 入庫・棚卸による在庫数の増減を記録する
+      *       修正#STK 新規作成
+      *===============================================================
+     A                                      UNIQUE
+     A          R MOVREC
+     A                                      TEXT('在庫移動履歴レコード')
+     A*
+     A* キーフィールド
+     A            MOVID         18P 0       COLHDG('移動ID')
+     A                                      TEXT('在庫移動ID')
+     A*
+     A* 移動の内容
+     A            WHID           4P 0       COLHDG('倉庫ID')
+     A                                      TEXT('倉庫ID')
+     A            ITEMID         9P 0       COLHDG('商品ID')
+     A                                      TEXT('商品ID')
+     A            MOVTYPE       10A         COLHDG('区分')
+     A                                      TEXT('RECEIPT=入庫 COUNT=棚卸')
+     A            MOVQTY        15P 3       COLHDG('増減数')
+     A                                      TEXT('在庫の増減数(減少は負)')
+     A            BEFQTY        15P 3       COLHDG('変更前' '在庫')
+     A                                      TEXT('変更前の現在庫数')
+     A            AFTQTY        15P 3       COLHDG('変更後' '在庫')
+     A                                      TEXT('変更後の現在庫数')
+     A            REFNO         30A         COLHDG('参照番号')
+     A                                      TEXT('仕入伝票番号など')
+     A            MOVDATE        8P 0       COLHDG('移動日')
+     A                                      TEXT('移動日')
+     A*
+     A* 監査情報
+     A            CRTUSER       30O         COLHDG('作成者')
+     A                                      TEXT('作成ユーザー')
+     A            CRTDATE        8P 0       COLHDG('作成日')
+     A                                      TEXT('作成日付')
+     A            CRTTIM         6P 0       COLHDG('作成時刻')
+     A                                      TEXT('作成時刻')
+     A*
+     A* キー定義
+     A          K MOVID

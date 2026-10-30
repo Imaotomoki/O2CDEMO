@@ -1,0 +1,56 @@
+     A* ==========================================================
+     A* DUNNINGD - 督促状発行 画面
+     A* 修正#DUN: 新規作成
+     A*   全角の定数の直後は1桁空けて項目を置く(SIと属性桁の重なり防止)
+     A* ==========================================================
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      CA03(03 'F3=終了')
+     A                                      CA12(12 'F12=戻る')
+     A                                      PRINT
+     A* --- 期限超過の顧客一覧 ---
+     A          R DUNSFL                    SFL
+     A            SOPT           1A  B  8  2DSPATR(UL)
+     A                                      VALUES(' ' '1')
+     A            SCUSTCD       12A  O  8  4COLOR(GRN)
+     A            SCUSTNM       18A  O  8 17
+     A            SAMT           9Y 0O  8 36EDTCDE(1)
+     A            SCNT           3Y 0O  8 49EDTCDE(Z)
+     A            SDAYS          5Y 0O  8 56EDTCDE(Z)
+     A            SLAST         10A  O  8 63
+     A            STIMES         3Y 0O  8 75EDTCDE(Z)
+     A            SCUSTID        9S 0H      
+     A            SLASTDT        8S 0H      
+     A            STIMESH        3S 0H      
+     A          R DUNCTL                    SFLCTL(DUNSFL)
+     A                                      SFLSIZ(0999)
+     A                                      SFLPAG(0012)
+     A  91                                  SFLDSP
+     A  92                                  SFLDSPCTL
+     A  93                                  SFLCLR
+     A  94                                  SFLEND(*MORE)
+     A                                  1  2'督促状発行'
+     A                                      DSPATR(HI)
+     A                                  1 70DATE(*SYS) EDTCDE(Y)
+     A                                  3  2'基準日'
+     A            BASEDT         8Y 0B  3 11DSPATR(UL)
+     A  31                                  DSPATR(RI PC)
+     A                                  3 22'支払期限から'
+     A            MINDAYS        3Y 0B  3 37EDTCDE(Z)
+     A                                      DSPATR(UL)
+     A  32                                  DSPATR(RI PC)
+     A                                  3 41'日以上過ぎた請求書'
+     A                                  4  2'1=督促状発行'
+     A                                      COLOR(GRN)
+     A                                  4 24'Enter=再表示'
+     A                                      COLOR(BLU)
+     A                                  4 40'F3=終了'
+     A                                      COLOR(BLU)
+     A            DMSG          75A  O  5  2COLOR(RED)
+     A                                  7  1'選'
+     A                                  7  6'コード'
+     A                                  7 17'顧客名'
+     A                                  7 37'超過金額'
+     A                                  7 48'件数'
+     A                                  7 56'日数'
+     A                                  7 63'前回督促日'
+     A                                  7 76'回'

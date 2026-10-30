@@ -1,0 +1,112 @@
+     A* ==========================================================
+     A* 修正#PRC: 金額・単価は文字(円は小数なし、外貨は小数2桁)
+     A* ORDMNTD - 受注照会・変更・取消 画面
+     A* Mod#MNT: 新規作成
+     A*   制御レコードの項目はサブファイルより上に置く(上下で挟まない)
+     A* ==========================================================
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      CA03(03 'F3=終了')
+     A                                      CF04(04 'F4=顧客検索')
+     A                                      CA05(05 'F5=再表示')
+     A                                      CF06(06 'F6=確定')
+     A                                      CA12(12 'F12=戻る')
+     A                                      PRINT
+     A* --- 受注一覧 ---
+     A          R LSTSFL                    SFL
+     A            LOPT           1A  B  8  2DSPATR(UL)
+     A                                      VALUES(' ' '2' '4' '5')
+     A            LSONUM        20A  O  8  5COLOR(GRN)
+     A            LODATE         8Y 0O  8 26EDTCDE(Z)
+     A            LCUSTNM       16A  O  8 35
+     A            LTOTAMT       14A  O  8 52
+     A            LSTAT         12A  O  8 67COLOR(TRQ)
+     A            LSOID         18S 0H      
+     A            LSTSCD        12A  H      
+     A          R LSTCTL                    SFLCTL(LSTSFL)
+     A                                      SFLSIZ(9999)
+     A                                      SFLPAG(0014)
+     A  91                                  SFLDSP
+     A  92                                  SFLDSPCTL
+     A  93                                  SFLCLR
+     A  94                                  SFLEND(*MORE)
+     A            LRRN           4S 0H      
+     A                                  1  2'受注照会・変更・取消'
+     A                                      DSPATR(HI)
+     A                                  1 70DATE(*SYS) EDTCDE(Y)
+     A                                  3  2'2=変更  4=取消  5=照会'
+     A                                      COLOR(GRN)
+     A                                  3 40'F3=終了 F4=顧客 F5=再表示'
+     A                                      COLOR(BLU)
+     A            LMSG          75A  O  4  2COLOR(RED)
+     A* 修正#OFL: 顧客・状態で絞り込み(Enterで検索)
+     A                                  5  2'顧客'
+     A            LFCUST        20A  B  5  9DSPATR(UL)
+     A                                  5 31'状態'
+     A            LFSTS          1A  B  5 38DSPATR(UL)
+     A                                      VALUES(' ' '1' '2')
+     A                                  5 41'空白=全部 1=未完了 2=完了'
+     A                                      COLOR(BLU)
+     A                                  6  1'選択'
+     A                                  6  8'受注番号'
+     A                                  6 27'受注日'
+     A                                  6 36'顧客名'
+     A                                  6 54'合計(税抜)'
+     A                                  6 69'状態'
+     A                                  7  1'----'
+     A                                  7  7'------------------'
+     A                                  7 26'--------'
+     A                                  7 35'----------------'
+     A                                  7 54'------------'
+     A                                  7 67'------------'
+     A* --- 受注明細(照会/変更/取消確認) ---
+     A          R DTLSFL                    SFL
+     A            DLINE          2Y 0O 10  2
+     A            DITEM         12A  O 10  5COLOR(GRN)
+     A            DNAME         18A  O 10 18
+     A            DORD           7Y 0B 10 37EDTCDE(3)
+     A N87                                  DSPATR(PR)
+     A  87                                  DSPATR(UL)
+     A  85                                  DSPATR(RI PC)
+     A            DSHP           7Y 0O 10 45EDTCDE(3)
+     A* 修正#UPC: 変更モード(87)では単価も入力できる
+     A            DPRC          11A  B 10 53
+     A N87                                  DSPATR(PR)
+     A  87                                  DSPATR(UL)
+     A  86                                  DSPATR(RI)
+     A            DAMT          14A  O 10 65
+     A            DOLDQ          7S 0H      
+     A            DOLDP         15S 4H      
+     A          R DTLCTL                    SFLCTL(DTLSFL)
+     A                                      SFLSIZ(0099)
+     A                                      SFLPAG(0012)
+     A  81                                  SFLDSP
+     A  82                                  SFLDSPCTL
+     A  83                                  SFLCLR
+     A  84                                  SFLEND(*MORE)
+     A            DRRN           4S 0H      
+     A            DTITLE        30A  O  1  2DSPATR(HI)
+     A                                  3  2'受注番号'
+     A            DSONUM        20A  O  3 13COLOR(GRN)
+     A                                  3 36'状態'
+     A            DSTAT         12A  O  3 43COLOR(TRQ)
+     A                                  4  2'顧客'
+     A            DCUSTNM       40A  O  4 13
+     A                                  5  2'合計(税抜)'
+     A            DTOTAMT       17A  O  5 17
+     A            DCUR           3A  O  5 36COLOR(GRN)
+     A            DKEYS         70A  O  6  2COLOR(BLU)
+     A            DMSG          75A  O  7  2COLOR(RED)
+     A                                  8  1'行'
+     A                                  8  6'商品CD'
+     A                                  8 18'商品名'
+     A                                  8 37'受注数'
+     A                                  8 46'出荷済'
+     A                                  8 58'単価'
+     A                                  8 73'金額'
+     A                                  9  1'---'
+     A                                  9  5'------------'
+     A                                  9 18'------------------'
+     A                                  9 37'-------'
+     A                                  9 45'-------'
+     A                                  9 53'-----------'
+     A                                  9 65'--------------'

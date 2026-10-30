@@ -1,143 +1,243 @@
-             PGM
-/*===============================================================*/
-/* プログラム名: COMPBIZ                                          */
-/* 説明: 業務ロジックプログラムのコンパイル                        */
-/* 機能:                                                          */
-/*   1. 受注登録プログラム（CREATESORD）のコンパイル              */
-/*   2. 出荷確定プログラム（CONFIRMSHP）のコンパイル              */
-/*   3. 請求発行プログラム（CREATEINV）のコンパイル               */
-/*   4. 在庫トリガー（INVTRIGGER）のコンパイル                    */
-/*===============================================================*/
+             PGM        PARM(&LIBP)
+/*=================================================================*/
+/* Program  : COMPBIZ                                              */
+/* Desc     : Compile business logic programs                      */
+/* 修正#LIB: CALL COMPBIZ PARM('O2CDEMO') のようにライブラリー名を */
+/*   渡す。ソースもオブジェクトもそのライブラリーに置く             */
+/* 修正#BLD: 現在のソースをすべてコンパイルできるよう作り直し       */
+/*   画面・帳票(DSPF/PRTF) → RPG → CL の順にコンパイルする        */
+/*   ソースタイプごとのコマンド                                     */
+/*     SQLRPGLE: CRTSQLRPGI OBJTYPE(*PGM) CLOSQLCSR(*ENDMOD)        */
+/*     RPGLE   : CRTBNDRPG                                          */
+/*     CLLE    : CRTBNDCL                                           */
+/*   1本失敗しても残りは続け、最後に件数を報告する                  */
+/*   (失敗があればエスケープ・メッセージで終了)                    */
+/*   使用中の画面ファイルは作り直せないので、業務画面を閉じて実行   */
+/* 修正#INQ: 請求書照会(INVINQD/INVINQ)を追加                      */
+/* 修正#PCN: 入金取消(PAYCNLD/PAYCANCEL)を追加                     */
+/* 修正#ICN: 請求書の取消(INVCANCEL)を追加                         */
+/* 修正#SCN: 出荷取消(SHPCNLD/SHPCANCEL)を追加                     */
+/* 修正#INQ2: 入金履歴・在庫照会・月次集計・顧客の与信を追加       */
+/* 修正#CHK: データ整合性チェック(CHKDATAD/CHKDATA)を追加          */
+/* 修正#DUE: 出荷予定(SHPDUED/SHPDUE)を追加                        */
+/*=================================================================*/
 
-             DCL        VAR(&MSGID) TYPE(*CHAR) LEN(7)
-             DCL        VAR(&MSGDTA) TYPE(*CHAR) LEN(256)
+             DCL        VAR(&LIBP) TYPE(*CHAR) LEN(10)
+             DCL        VAR(&LIB) TYPE(*CHAR) LEN(10)
+             DCL        VAR(&OBJ) TYPE(*CHAR) LEN(10)
+             DCL        VAR(&TYPE) TYPE(*CHAR) LEN(10)
+             DCL        VAR(&OKCOUNT) TYPE(*DEC) LEN(3 0) VALUE(0)
              DCL        VAR(&ERRCOUNT) TYPE(*DEC) LEN(3 0) VALUE(0)
+             DCL        VAR(&CNT) TYPE(*CHAR) LEN(3)
+             DCL        VAR(&ERRLIST) TYPE(*CHAR) LEN(200)
 
-             SNDPGMMSG  MSG('業務ロジックプログラムのコンパイルを開始します') TOPGMQ(*EXT) +
-                          MSGTYPE(*INFO)
+/* 修正#LIB: ライブラリー名はパラメーターで受け取る(例 O2CDEMO)    */
+             CHGVAR     VAR(&LIB) VALUE(&LIBP)
+             MONMSG     MSGID(MCH3601) EXEC(DO)
+             SNDPGMMSG  MSGID(CPF9898) MSGF(QCPFMSG) +
+                          MSGDTA('ライブラリー名を指定してください') +
+                          MSGTYPE(*ESCAPE)
+             ENDDO
+/*   画面ファイルを参照するプログラムのためライブラリーリストに追加 */
+             ADDLIBLE   LIB(&LIB)
+             MONMSG     MSGID(CPF2103)
 
-/*---------------------------------------------------------------*/
-/* 1. 受注登録プログラム（CREATESORD）                            */
-/*---------------------------------------------------------------*/
-             SNDPGMMSG  MSG('CREATESORD をコンパイル中...') TOPGMQ(*EXT) MSGTYPE(*INFO)
+             SNDPGMMSG  MSG('業務プログラムをコンパイル中...') +
+                          TOPGMQ(*EXT) MSGTYPE(*INFO)
 
-             MONMSG     MSGID(CPF0000) EXEC(GOTO CMDLBL(ERRCRESRD))
+/*-- 1. 画面ファイル・印刷ファイル ------------------------------------*/
+             CHGVAR     VAR(&TYPE) VALUE('DSPF')
+             CHGVAR     VAR(&OBJ) VALUE('O2CPRMD')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('O2CMNUD')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('ORDENTRYD')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('ORDMNTD')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('CNFSHPD')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('STKMNTD')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('PAYENTRYD')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('BILLCLSD')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('ARAGINGD')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('DUNNINGD')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('INVINQD')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('PAYCNLD')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('SHPCNLD')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('INVPAYHD')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('STKINQD')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('SALESUMD')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('CUSTINQD')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('CHKDATAD')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('SHPDUED')
+             CALLSUBR   SUBR(COMPILE)
 
-             CRTRPGMOD  MODULE(HANBAI/CREATESORD) SRCFILE(HANBAI/QRPGLESRC) +
-                          SRCMBR(CREATESORD) DBGVIEW(*SOURCE) REPLACE(*YES)
+             CHGVAR     VAR(&TYPE) VALUE('PRTF')
+             CHGVAR     VAR(&OBJ) VALUE('INVPRTF')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('CLSPRTF')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('ARAGPRTF')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('DUNPRTF')
+             CALLSUBR   SUBR(COMPILE)
 
-             CRTPGM     PGM(HANBAI/CREATESORD) MODULE(HANBAI/CREATESORD) ACTGRP(*NEW) +
-                          TEXT('受注登録プログラム') REPLACE(*YES)
+/*-- 2. 埋め込みSQLのRPG ----------------------------------------------*/
+             CHGVAR     VAR(&TYPE) VALUE('SQLRPGLE')
+             CHGVAR     VAR(&OBJ) VALUE('O2CPRMPT')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('CREATESORD')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('ORDERENTRY')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('CONFIRMSHP')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('CREATEINV')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('INVTRIGGER')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('STKMAINT')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('PAYENTRY')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('PAYCANCEL')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('INVCANCEL')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('SHPCANCEL')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('INVPAYH')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('STKINQ')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('SALESUM')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('CUSTINQ')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('CHKDATA')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('SHPDUE')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('BILLCLOSE')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('ARAGING')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('DUNNING')
+             CALLSUBR   SUBR(COMPILE)
 
-             SNDPGMMSG  MSG('CREATESORD のコンパイル完了') TOPGMQ(*EXT) MSGTYPE(*COMP)
+/*-- 3. RPG -----------------------------------------------------------*/
+             CHGVAR     VAR(&TYPE) VALUE('RPGLE')
+             CHGVAR     VAR(&OBJ) VALUE('ORDMAINT')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('CNFSHPENT')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('INVPRINT')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('INVINQ')
+             CALLSUBR   SUBR(COMPILE)
 
-             GOTO       CMDLBL(CMPCNFSHP)
+/*-- 4. CL ------------------------------------------------------------*/
+             CHGVAR     VAR(&TYPE) VALUE('CLLE')
+             CHGVAR     VAR(&OBJ) VALUE('CNFSHPCL')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('CRTINVCL')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('O2CMENU')
+             CALLSUBR   SUBR(COMPILE)
 
- ERRCRESRD:
-             CHGVAR     VAR(&ERRCOUNT) VALUE(&ERRCOUNT + 1)
-             SNDPGMMSG  MSG('CREATESORD のコンパイルエラー') TOPGMQ(*EXT) MSGTYPE(*DIAG)
+/*-- 5. トリガー設定 --------------------------------------------------*/
+             SNDPGMMSG  MSG('在庫トリガーを設定中...') +
+                          TOPGMQ(*EXT) MSGTYPE(*INFO)
 
-/*---------------------------------------------------------------*/
-/* 2. 出荷確定プログラム（CONFIRMSHP）                            */
-/*---------------------------------------------------------------*/
- CMPCNFSHP:
-             SNDPGMMSG  MSG('CONFIRMSHP をコンパイル中...') TOPGMQ(*EXT) MSGTYPE(*INFO)
-
-             MONMSG     MSGID(CPF0000) EXEC(GOTO CMDLBL(ERRCNFSHP))
-
-             CRTRPGMOD  MODULE(HANBAI/CONFIRMSHP) SRCFILE(HANBAI/QRPGLESRC) +
-                          SRCMBR(CONFIRMSHP) DBGVIEW(*SOURCE) REPLACE(*YES)
-
-             CRTPGM     PGM(HANBAI/CONFIRMSHP) MODULE(HANBAI/CONFIRMSHP) ACTGRP(*NEW) +
-                          TEXT('出荷確定プログラム') REPLACE(*YES)
-
-             SNDPGMMSG  MSG('CONFIRMSHP のコンパイル完了') TOPGMQ(*EXT) MSGTYPE(*COMP)
-
-             GOTO       CMDLBL(CMPCRTINV)
-
- ERRCNFSHP:
-             CHGVAR     VAR(&ERRCOUNT) VALUE(&ERRCOUNT + 1)
-             SNDPGMMSG  MSG('CONFIRMSHP のコンパイルエラー') TOPGMQ(*EXT) MSGTYPE(*DIAG)
-
-/*---------------------------------------------------------------*/
-/* 3. 請求発行プログラム（CREATEINV）                             */
-/*---------------------------------------------------------------*/
- CMPCRTINV:
-             SNDPGMMSG  MSG('CREATEINV をコンパイル中...') TOPGMQ(*EXT) MSGTYPE(*INFO)
-
-             MONMSG     MSGID(CPF0000) EXEC(GOTO CMDLBL(ERRCRTINV))
-
-             CRTRPGMOD  MODULE(HANBAI/CREATEINV) SRCFILE(HANBAI/QRPGLESRC) SRCMBR(CREATEINV) +
-                          DBGVIEW(*SOURCE) REPLACE(*YES)
-
-             CRTPGM     PGM(HANBAI/CREATEINV) MODULE(HANBAI/CREATEINV) ACTGRP(*NEW) +
-                          TEXT('請求発行プログラム') REPLACE(*YES)
-
-             SNDPGMMSG  MSG('CREATEINV のコンパイル完了') TOPGMQ(*EXT) MSGTYPE(*COMP)
-
-             GOTO       CMDLBL(CMPINVTRG)
-
- ERRCRTINV:
-             CHGVAR     VAR(&ERRCOUNT) VALUE(&ERRCOUNT + 1)
-             SNDPGMMSG  MSG('CREATEINV のコンパイルエラー') TOPGMQ(*EXT) MSGTYPE(*DIAG)
-
-/*---------------------------------------------------------------*/
-/* 4. 在庫トリガー（INVTRIGGER）                                  */
-/*---------------------------------------------------------------*/
- CMPINVTRG:
-             SNDPGMMSG  MSG('INVTRIGGER をコンパイル中...') TOPGMQ(*EXT) MSGTYPE(*INFO)
-
-             MONMSG     MSGID(CPF0000) EXEC(GOTO CMDLBL(ERRINVTRG))
-
-             CRTRPGMOD  MODULE(HANBAI/INVTRIGGER) SRCFILE(HANBAI/QRPGLESRC) +
-                          SRCMBR(INVTRIGGER) DBGVIEW(*SOURCE) REPLACE(*YES)
-
-             CRTPGM     PGM(HANBAI/INVTRIGGER) MODULE(HANBAI/INVTRIGGER) ACTGRP(*NEW) +
-                          TEXT('在庫更新トリガープログラム') REPLACE(*YES)
-
-             SNDPGMMSG  MSG('INVTRIGGER のコンパイル完了') TOPGMQ(*EXT) MSGTYPE(*COMP)
-
-             GOTO       CMDLBL(SETUPTRIG)
-
- ERRINVTRG:
-             CHGVAR     VAR(&ERRCOUNT) VALUE(&ERRCOUNT + 1)
-             SNDPGMMSG  MSG('INVTRIGGER のコンパイルエラー') TOPGMQ(*EXT) MSGTYPE(*DIAG)
-
-/*---------------------------------------------------------------*/
-/* 5. トリガー設定                                                */
-/*---------------------------------------------------------------*/
- SETUPTRIG:
-             SNDPGMMSG  MSG('在庫トリガーを設定中...') TOPGMQ(*EXT) MSGTYPE(*INFO)
-
-             MONMSG     MSGID(CPF0000) EXEC(GOTO CMDLBL(ERRTRGSET))
-
-             /* 既存のトリガーを削除（存在する場合） */
-             RMVPFTRG   FILE(HANBAI/INVENTORYP) TRGTIME(*AFTER) TRGEVENT(*UPDATE)
+             RMVPFTRG   FILE(&LIB/INVENTORYP) +
+                          TRGTIME(*AFTER) +
+                          TRGEVENT(*UPDATE)
              MONMSG     MSGID(CPF0000)
 
-             /* トリガーを追加 */
-             ADDPFTRG   FILE(HANBAI/INVENTORYP) TRGTIME(*AFTER) TRGEVENT(*UPDATE) +
-                          PGM(HANBAI/INVTRIGGER) TRGUPDCND(*CHANGE)
-
-             SNDPGMMSG  MSG('在庫トリガーの設定完了') TOPGMQ(*EXT) MSGTYPE(*COMP)
-
-             GOTO       CMDLBL(COMPLETE)
-
- ERRTRGSET:
+             ADDPFTRG   FILE(&LIB/INVENTORYP) +
+                          TRGTIME(*AFTER) +
+                          TRGEVENT(*UPDATE) +
+                          PGM(&LIB/INVTRIGGER) +
+                          TRGUPDCND(*CHANGE)
+             MONMSG     MSGID(CPF0000) EXEC(DO)
              CHGVAR     VAR(&ERRCOUNT) VALUE(&ERRCOUNT + 1)
-             SNDPGMMSG  MSG('トリガー設定エラー') TOPGMQ(*EXT) MSGTYPE(*DIAG)
+             CHGVAR     VAR(&ERRLIST) VALUE(&ERRLIST *BCAT +
+                          'トリガー設定')
+             ENDDO
 
-/*---------------------------------------------------------------*/
-/* 完了処理                                                       */
-/*---------------------------------------------------------------*/
- COMPLETE:
+/*-- 完了 -------------------------------------------------------------*/
              IF         COND(&ERRCOUNT *EQ 0) THEN(DO)
-                SNDPGMMSG  MSG('すべてのプログラムのコンパイルが完了しました') TOPGMQ(*EXT) +
-                             MSGTYPE(*COMP)
+             CHGVAR     VAR(&CNT) VALUE(&OKCOUNT)
+             SNDPGMMSG  MSG('全プログラムの正常コンパイル完了(' *CAT +
+                          &CNT *CAT '本)') TOPGMQ(*EXT) +
+                          MSGTYPE(*COMP)
              ENDDO
              ELSE       CMD(DO)
-                SNDPGMMSG  MSG('一部のプログラムでエラーが発生しました') TOPGMQ(*EXT) +
-                             MSGTYPE(*DIAG)
+             CHGVAR     VAR(&CNT) VALUE(&ERRCOUNT)
+             SNDPGMMSG  MSGID(CPF9898) MSGF(QCPFMSG) +
+                          MSGDTA('コンパイルエラー' *BCAT &CNT *BCAT +
+                          '件:' *BCAT &ERRLIST) MSGTYPE(*ESCAPE)
              ENDDO
+             RETURN
+
+/*-- サブルーチン: &OBJ を &TYPE に合ったコマンドでコンパイル -------*/
+             SUBR       SUBR(COMPILE)
+             SELECT
+             WHEN       COND(&TYPE *EQ 'DSPF') THEN(DO)
+             CRTDSPF    FILE(&LIB/&OBJ) SRCFILE(&LIB/QDDSSRC) +
+                          SRCMBR(&OBJ) REPLACE(*YES)
+             MONMSG     MSGID(CPF0000) EXEC(GOTO CMDLBL(FAILED))
+             ENDDO
+             WHEN       COND(&TYPE *EQ 'PRTF') THEN(DO)
+             CRTPRTF    FILE(&LIB/&OBJ) SRCFILE(&LIB/QDDSSRC) +
+                          SRCMBR(&OBJ) REPLACE(*YES)
+             MONMSG     MSGID(CPF0000) EXEC(GOTO CMDLBL(FAILED))
+             ENDDO
+             WHEN       COND(&TYPE *EQ 'SQLRPGLE') THEN(DO)
+             CRTSQLRPGI OBJ(&LIB/&OBJ) SRCFILE(&LIB/QRPGLESRC) +
+                          SRCMBR(&OBJ) OBJTYPE(*PGM) +
+                          CLOSQLCSR(*ENDMOD) DBGVIEW(*SOURCE) +
+                          REPLACE(*YES)
+             MONMSG     MSGID(CPF0000 SQL0000) EXEC(GOTO +
+                          CMDLBL(FAILED))
+             ENDDO
+             WHEN       COND(&TYPE *EQ 'RPGLE') THEN(DO)
+             CRTBNDRPG  PGM(&LIB/&OBJ) SRCFILE(&LIB/QRPGLESRC) +
+                          SRCMBR(&OBJ) DBGVIEW(*SOURCE) +
+                          REPLACE(*YES)
+             MONMSG     MSGID(CPF0000 RNS0000) EXEC(GOTO +
+                          CMDLBL(FAILED))
+             ENDDO
+             WHEN       COND(&TYPE *EQ 'CLLE') THEN(DO)
+             CRTBNDCL   PGM(&LIB/&OBJ) SRCFILE(&LIB/QCLLESRC) +
+                          SRCMBR(&OBJ) DBGVIEW(*SOURCE) +
+                          REPLACE(*YES)
+             MONMSG     MSGID(CPF0000) EXEC(GOTO CMDLBL(FAILED))
+             ENDDO
+             ENDSELECT
+             CHGVAR     VAR(&OKCOUNT) VALUE(&OKCOUNT + 1)
+             SNDPGMMSG  MSG(&OBJ *TCAT ' コンパイル完了') +
+                          TOPGMQ(*EXT) MSGTYPE(*INFO)
+             RTNSUBR
+ FAILED:
+             CHGVAR     VAR(&ERRCOUNT) VALUE(&ERRCOUNT + 1)
+             CHGVAR     VAR(&ERRLIST) VALUE(&ERRLIST *BCAT &OBJ)
+             SNDPGMMSG  MSG(&OBJ *TCAT ' コンパイルエラー') +
+                          TOPGMQ(*EXT) MSGTYPE(*DIAG)
+             ENDSUBR
 
              ENDPGM

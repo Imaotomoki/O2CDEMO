@@ -1,0 +1,97 @@
+     A* ==========================================================
+     A* STKINQD - 在庫照会の画面
+     A* 修正#SIQ: 新規作成。STKINQ から使う
+     A*   全角の定数の直後は1桁空けて項目を置く(SIと属性桁の重なり防止)
+     A*   定数・項目どうしも属性の1桁を空ける(重なると表示されない)
+     A* ==========================================================
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      CA03(03 'F3=終了')
+     A                                      CF04(04 'F4=検索')
+     A                                      CA12(12 'F12=戻る')
+     A                                      PRINT
+     A* ---- LSFL - 在庫の一覧(倉庫・商品の順) ----
+     A          R LSFL                      SFL
+     A            LOPT           1A  B  7  2DSPATR(UL)
+     A                                      VALUES(' ' '5')
+     A            LWH           10A  O  7  4
+     A            LITEM         12A  O  7 15COLOR(GRN)
+     A            LNAME         20A  O  7 28
+     A            LOH           10A  O  7 49
+     A            LALC          10A  O  7 60
+     A            LAVL          10A  O  7 71DSPATR(HI)
+     A  61                                  COLOR(RED)
+     A            LWHID          4S 0H      
+     A            LITEMID        9S 0H      
+     A          R LCTL                      SFLCTL(LSFL)
+     A                                      SFLSIZ(0999)
+     A                                      SFLPAG(0014)
+     A  91                                  SFLDSP
+     A  92                                  SFLDSPCTL
+     A  93                                  SFLCLR
+     A  94                                  SFLEND(*MORE)
+     A                                      OVERLAY
+     A                                      RTNCSRLOC(&CSRRCD &CSRFLD)
+     A            CSRRCD        10A  H      
+     A            CSRFLD        10A  H      
+     A                                  1  2'在庫照会'
+     A                                      DSPATR(HI)
+     A                                  1 70DATE(*SYS) EDTCDE(Y)
+     A                                  3  2'倉庫'
+     A            LFWH          10A  B  3  9DSPATR(UL)
+     A                                  3 21'商品'
+     A            LFITEM        12A  B  3 28DSPATR(UL)
+     A                                  3 42'(前方一致・空白=全部)'
+     A                                      COLOR(BLU)
+     A                                  4  2'5=入出庫履歴 Enter=検索'
+     A                                      COLOR(BLU)
+     A                                  5  2'有効在庫が0以下は赤'
+     A                                      COLOR(BLU)
+     A                                  6  4'倉庫'
+     A                                  6 15'商品'
+     A                                  6 28'品名'
+     A                                  6 51'現在庫'
+     A                                  6 62'引当済'
+     A                                  6 71'有効在庫'
+     A* ---- LFOOT - メッセージとキー(SFLの下は制御に置けない) ----
+     A          R LFOOT                     
+     A            LMSG          78A  O 22  2COLOR(RED)
+     A                                 23  2'F3=終了  F4=検索'
+     A                                      COLOR(BLU)
+     A* ---- HSFL - 入出庫の履歴(新しい順) ----
+     A          R HSFL                      SFL
+     A            HDT           10A  O  7  2
+     A            HKIND         10A  O  7 13COLOR(TRQ)
+     A            HQTY          12A  O  7 24
+     A            HAFT          12A  O  7 37
+     A            HREF          20A  O  7 50
+     A          R HCTL                      SFLCTL(HSFL)
+     A                                      SFLSIZ(0999)
+     A                                      SFLPAG(0014)
+     A  81                                  SFLDSP
+     A  82                                  SFLDSPCTL
+     A  83                                  SFLCLR
+     A  84                                  SFLEND(*MORE)
+     A                                      OVERLAY
+     A                                  1  2'入出庫の履歴'
+     A                                      DSPATR(HI)
+     A                                  1 70DATE(*SYS) EDTCDE(Y)
+     A                                  3  2'倉庫'
+     A            HWH           40A  O  3  9COLOR(TRQ)
+     A                                  4  2'商品'
+     A            HITEM         40A  O  4  9COLOR(TRQ)
+     A                                  5  2'現在庫'
+     A            HOH           10A  O  5 11
+     A                                  5 24'引当済'
+     A            HALC          10A  O  5 33
+     A                                  5 46'有効在庫'
+     A            HAVL          10A  O  5 57DSPATR(HI)
+     A                                  6  2'日付'
+     A                                  6 13'区分'
+     A                                  6 30'数量'
+     A                                  6 37'在庫(後)'
+     A                                  6 50'参照番号'
+     A* ---- HFOOT ----
+     A          R HFOOT                     
+     A            HMSG          78A  O 22  2COLOR(RED)
+     A                                 23  2'F3=終了  F12=戻る'
+     A                                      COLOR(BLU)

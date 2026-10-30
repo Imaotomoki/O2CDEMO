@@ -1,0 +1,97 @@
+     A* ==========================================================
+     A* PAYCNLD - 入金取消の画面
+     A* 修正#PCN: 新規作成。PAYCANCEL から使う
+     A*   全角の定数の直後は1桁空けて項目を置く(SIと属性桁の重なり防止)
+     A*   定数・項目どうしも属性の1桁を空ける(重なると表示されない)
+     A* ==========================================================
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      CA03(03 'F3=終了')
+     A                                      CF04(04 'F4=検索')
+     A                                      CA06(06 'F6=取消実行')
+     A                                      CA12(12 'F12=戻る')
+     A                                      PRINT
+     A* ---- LSFL - 入金の一覧(新しい順) ----
+     A          R LSFL                      SFL
+     A            LOPT           1A  B  6  2DSPATR(UL)
+     A                                      VALUES(' ' '4')
+     A            LPAYNUM       14A  O  6  4COLOR(GRN)
+     A            LPAYDT        10A  O  6 19
+     A            LCUSTCD       12A  O  6 30
+     A            LCUR           3A  O  6 43
+     A            LAMT          15A  O  6 47
+     A            LMETH          8A  O  6 63
+     A            LSTS           8A  O  6 72COLOR(TRQ)
+     A            LPAYID        18S 0H      
+     A          R LCTL                      SFLCTL(LSFL)
+     A                                      SFLSIZ(0999)
+     A                                      SFLPAG(0014)
+     A  91                                  SFLDSP
+     A  92                                  SFLDSPCTL
+     A  93                                  SFLCLR
+     A  94                                  SFLEND(*MORE)
+     A                                      OVERLAY
+     A                                  1  2'入金取消'
+     A                                      DSPATR(HI)
+     A                                  1 70DATE(*SYS) EDTCDE(Y)
+     A                                  3  2'顧客コード'
+     A            LFCUST        20A  B  3 16DSPATR(UL)
+     A  31                                  DSPATR(RI PC)
+     A                                  3 38'(空白=全顧客)'
+     A                                      COLOR(BLU)
+     A                                  4  2'4=取消  Enter=検索'
+     A                                      COLOR(BLU)
+     A                                  5  4'入金番号'
+     A                                  5 19'入金日'
+     A                                  5 30'顧客'
+     A                                  5 43'通貨'
+     A                                  5 55'入金額'
+     A                                  5 64'方法'
+     A                                  5 72'状態'
+     A* ---- LFOOT - メッセージとキー(SFLの下は制御に置けない) ----
+     A          R LFOOT                     
+     A            LMSG          78A  O 22  2COLOR(RED)
+     A                                 23  2'F3=終了  F4=顧客検索'
+     A                                      COLOR(BLU)
+     A* ---- CNF - 取消の確認 ----
+     A          R CNF                       
+     A                                  1  2'入金取消の確認'
+     A                                      DSPATR(HI)
+     A                                  1 70DATE(*SYS) EDTCDE(Y)
+     A                                  3  2'入金番号'
+     A            CPAYNUM       20A  O  3 14DSPATR(HI)
+     A                                  3 37'状態'
+     A            CSTS          10A  O  3 45COLOR(WHT)
+     A                                  4  2'顧客'
+     A            CCUSTCD       20A  O  4 14COLOR(TRQ)
+     A            CCUSTNM       38A  O  4 36COLOR(TRQ)
+     A                                  5  2'入金日'
+     A            CPAYDT        10A  O  5 14COLOR(TRQ)
+     A                                  5 26'入金方法'
+     A            CMETH         20A  O  5 38COLOR(TRQ)
+     A                                  6  2'通貨'
+     A            CCUR           3A  O  6 14COLOR(TRQ)
+     A                                  6 26'入金額'
+     A            CAMT          15A  O  6 38DSPATR(HI)
+     A                                  7  2'参照番号'
+     A            CREF          30A  O  7 14COLOR(TRQ)
+     A                                  9  2'消込を戻す請求書'
+     A                                      COLOR(WHT)
+     A                                 10  4'請求番号'
+     A                                 10 25'請求日'
+     A                                 10 45'消込額'
+     A                                 10 57'取消後の残高'
+     A            CAL01         76A  O 11  2
+     A            CAL02         76A  O 12  2
+     A            CAL03         76A  O 13  2
+     A            CAL04         76A  O 14  2
+     A            CAL05         76A  O 15  2
+     A            CAL06         76A  O 16  2
+     A            CAL07         76A  O 17  2
+     A            CAL08         76A  O 18  2
+     A            CAL09         76A  O 19  2
+     A            CAL10         76A  O 20  2
+     A                                 21  2'取り消すと消込を戻し、'
+     A                                 21 27'請求書の残高を元に戻します'
+     A            CMSG          78A  O 22  2COLOR(RED)
+     A                                 23  2'F6=取消実行  F12=戻る'
+     A                                      COLOR(BLU)

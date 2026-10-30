@@ -1,0 +1,108 @@
+     A* ==========================================================
+     A* ARAGINGD - 売掛金年齢表 画面
+     A* 修正#AGE: 新規作成
+     A*   顧客ごとの未収残高を支払期限からの経過日数で区分する
+     A* ==========================================================
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      CA03(03 'F3=終了')
+     A                                      CF04(04 'F4=検索')
+     A                                      CF06(06 'F6=印刷')
+     A                                      CA12(12 'F12=戻る')
+     A                                      PRINT
+     A* --- 顧客別一覧(1件2行) ---
+     A          R CUSSFL                    SFL
+     A            COPT           1A  B  9  2DSPATR(UL)
+     A                                      VALUES(' ' '5')
+     A            CCUSTCD       12A  O  9  4COLOR(GRN)
+     A            CCUSTNM       40A  O  9 17
+     A            CAMT0          9Y 0O 10  9EDTCDE(1)
+     A            CAMT1          9Y 0O 10 21EDTCDE(1)
+     A            CAMT2          9Y 0O 10 33EDTCDE(1)
+     A            CAMT3          9Y 0O 10 45EDTCDE(1)
+     A            CAMT4          9Y 0O 10 57EDTCDE(1)
+     A            CAMT5          9Y 0O 10 69EDTCDE(1)
+     A            CCUSTID        9S 0H      
+     A          R CUSCTL                    SFLCTL(CUSSFL)
+     A                                      SFLSIZ(0999)
+     A                                      SFLPAG(0006)
+     A  91                                  SFLDSP
+     A  92                                  SFLDSPCTL
+     A  93                                  SFLCLR
+     A  94                                  SFLEND(*MORE)
+     A                                  1  2'売掛金年齢表'
+     A                                      DSPATR(HI)
+     A                                  1 70DATE(*SYS) EDTCDE(Y)
+     A                                  3  2'基準日'
+     A            BASEDT         8Y 0B  3 11DSPATR(UL)
+     A  31                                  DSPATR(RI PC)
+     A                                  3 22'顧客コード'
+     A            FILTER        20A  B  3 35DSPATR(UL)
+     A                                  3 56'(前方一致)'
+     A                                  4  2'5=請求書明細'
+     A                                      COLOR(GRN)
+     A                                  4 24'Enter=再表示'
+     A                                      COLOR(BLU)
+     A                                  4 40'F6=印刷  F3=終了'
+     A                                      COLOR(BLU)
+     A                                  4 62'F4=顧客の検索'
+     A                                      COLOR(BLU)
+     A            CMSG          75A  O  5  2COLOR(RED)
+     A                                  6  1'選'
+     A                                  6  6'コード'
+     A                                  6 17'顧客名'
+     A                                  7 10'未収合計'
+     A                                  7 24'期限内'
+     A                                  7 36'1-30日'
+     A                                  7 47'31-60日'
+     A                                  7 59'61-90日'
+     A                                  7 72'91日超'
+     A                                  8  2'合計'
+     A                                      DSPATR(HI)
+     A            TAMT0          9Y 0O  8  9EDTCDE(1)
+     A                                      DSPATR(HI)
+     A            TAMT1          9Y 0O  8 21EDTCDE(1)
+     A                                      DSPATR(HI)
+     A            TAMT2          9Y 0O  8 33EDTCDE(1)
+     A                                      DSPATR(HI)
+     A            TAMT3          9Y 0O  8 45EDTCDE(1)
+     A                                      DSPATR(HI)
+     A            TAMT4          9Y 0O  8 57EDTCDE(1)
+     A                                      DSPATR(HI)
+     A            TAMT5          9Y 0O  8 69EDTCDE(1)
+     A                                      DSPATR(HI)
+     A* --- 請求書明細 ---
+     A          R DTLSFL                    SFL
+     A            DINVNUM       20A  O  8  2COLOR(GRN)
+     A            DINVDT        10A  O  8 23
+     A            DDUEDT        10A  O  8 34
+     A            DDAYS          5Y 0O  8 48EDTCDE(Z)
+     A            DBKT          10A  O  8 56
+     A            DBAL           9Y 0O  8 69EDTCDE(1)
+     A          R DTLCTL                    SFLCTL(DTLSFL)
+     A                                      SFLSIZ(0999)
+     A                                      SFLPAG(0013)
+     A  81                                  SFLDSP
+     A  82                                  SFLDSPCTL
+     A  83                                  SFLCLR
+     A  84                                  SFLEND(*MORE)
+     A                                  1  2'売掛金年齢表  請求書明細'
+     A                                      DSPATR(HI)
+     A                                  1 70DATE(*SYS) EDTCDE(Y)
+     A                                  3  2'顧客'
+     A            DCUST         60A  O  3  9COLOR(GRN)
+     A                                  4  2'基準日'
+     A            DBASE         10A  O  4 11
+     A                                  4 60'F12=戻る'
+     A                                      COLOR(BLU)
+     A                                  6  2'請求番号'
+     A                                  6 23'請求日'
+     A                                  6 34'支払期限'
+     A                                  6 45'超過日数'
+     A                                  6 56'区分'
+     A                                  6 68'円換算残高'
+     A                                  7  2'--------------------'
+     A                                  7 23'----------'
+     A                                  7 34'----------'
+     A                                  7 45'--------'
+     A                                  7 56'----------'
+     A                                  7 69'-----------'

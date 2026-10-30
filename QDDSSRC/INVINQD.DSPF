@@ -1,0 +1,103 @@
+     A* ==========================================================
+     A* INVINQD - 請求書照会の画面
+     A* 修正#INQ: 新規作成。INVINQ から使う
+     A* 修正#ICN: F10=取消 F11=作り直し を追加
+     A* 修正#PYH: F7=入金履歴 を追加
+     A*   全角の定数の直後は1桁空けて項目を置く(SIと属性桁の重なり防止)
+     A*   定数・項目どうしも属性の1桁を空ける(重なると表示されない)
+     A*   金額は編集済みの文字(円は小数なし、外貨は小数2桁)
+     A* ==========================================================
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      CA03(03 'F3=終了')
+     A                                      CF04(04 'F4=検索')
+     A                                      CA06(06 'F6=印刷')
+     A                                      CA07(07 'F7=入金履歴')
+     A                                      CA10(10 'F10=取消')
+     A                                      CA11(11 'F11=再発行')
+     A                                      CA12(12 'F12=戻る')
+     A                                      PRINT
+     A* ---- SEL - 請求番号の入力 ----
+     A          R SEL                       
+     A                                  1  2'請求書照会'
+     A                                      DSPATR(HI)
+     A                                  1 70DATE(*SYS) EDTCDE(Y)
+     A                                  3  2'請求番号'
+     A            QSINV         20A  B  3 14DSPATR(UL)
+     A  31                                  DSPATR(RI PC)
+     A                                  5  2'F4で一覧から選べます'
+     A                                      COLOR(BLU)
+     A            QSMSG         78A  O 23  2COLOR(RED)
+     A                                 24  2'F3=終了  F4=検索  Enter=表示'
+     A                                      COLOR(BLU)
+     A* ---- DSFL - 明細(8行/ページ) ----
+     A          R DSFL                      SFL
+     A            QLNO           3A  O  9  2
+     A            QITEM         12A  O  9  6COLOR(GRN)
+     A            QDESC         19A  O  9 20
+     A            QQTY           8A  O  9 40
+     A            QUPRC         12A  O  9 49
+     A            QLAMT         14A  O  9 62
+     A            QLTAX          4A  O  9 77
+     A* ---- DCTL - 見出し(請求書の情報) ----
+     A          R DCTL                      SFLCTL(DSFL)
+     A                                      SFLSIZ(0100)
+     A                                      SFLPAG(0008)
+     A                                      OVERLAY
+     A  91                                  SFLDSP
+     A  92                                  SFLDSPCTL
+     A  93                                  SFLCLR
+     A  94                                  SFLEND(*MORE)
+     A                                  1  2'請求書照会'
+     A                                      DSPATR(HI)
+     A                                  1 70DATE(*SYS) EDTCDE(Y)
+     A                                  3  2'請求番号'
+     A            QINV          20A  O  3 14DSPATR(HI)
+     A                                  3 37'状態'
+     A            QSTS          12A  O  3 45COLOR(WHT)
+     A                                  4  2'顧客'
+     A            QCUSTCD       20A  O  4 14COLOR(TRQ)
+     A            QCUSTNM       38A  O  4 36COLOR(TRQ)
+     A                                  5  2'請求日'
+     A            QINVDT        10A  O  5 14COLOR(TRQ)
+     A                                  5 26'支払期限'
+     A            QDUEDT        10A  O  5 38COLOR(TRQ)
+     A                                  5 50'通貨'
+     A            QCUR           3A  O  5 58COLOR(TRQ)
+     A            QOVER         40A  O  6 14COLOR(RED)
+     A                                  7  2'行'
+     A                                  7  7'商品'
+     A                                  7 20'品名'
+     A                                  7 42'数量'
+     A                                  7 55'単価'
+     A                                  7 68'金額'
+     A                                  7 75'税率'
+     A                                  8  2'----------------------------------'
+     A                                  8 37'----------------------------------'
+     A                                  8 72'--------'
+     A* ---- DFOOT - 合計・入金(先に書いてから DCTL を表示) ----
+     A          R DFOOT                     
+     A                                 18  2'----------------------------------'
+     A                                 18 37'----------------------------------'
+     A                                 18 72'--------'
+     A            QTX1          76A  O 19  2
+     A            QTX2          76A  O 20  2
+     A                                 21  2'小計'
+     A            QSUB          15A  O 21 12
+     A                                 21 29'消費税'
+     A            QTAX          15A  O 21 39
+     A                                 21 55'請求合計'
+     A            QTOT          15A  O 21 66DSPATR(HI)
+     A                                 22  2'入金済'
+     A            QPAID         15A  O 22 12
+     A                                 22 55'未収残高'
+     A            QBAL          15A  O 22 66DSPATR(HI)
+     A  61                                  COLOR(RED)
+     A            QDMSG         78A  O 23  2COLOR(RED)
+     A                                 24  2'F3=終了 F6=印刷'
+     A                                      COLOR(BLU)
+     A                                 24 22'F10=取消 F11=作り直し'
+     A                                      COLOR(BLU)
+     A                                 24 49'F12=戻る'
+     A                                      COLOR(BLU)
+     A                                 24 60'F7=入金履歴'
+     A                                      COLOR(BLU)

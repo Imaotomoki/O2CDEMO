@@ -1,0 +1,52 @@
+      *===============================================================
+      * 物理ファイル: BILLSTMP (請求締め履歴)
+      * 説明: 締め処理で発行した合計請求書の内容。1回の締めで1レコード
+      *       今回御請求額 = 前回御請求額 - 御入金額 + 今回お買上額
+      *                      + 消費税額
+      *       修正#CLS 新規作成
+      *===============================================================
+     A                                      UNIQUE
+     A          R STMREC
+     A                                      TEXT('請求締め履歴レコード')
+     A*
+     A* キーフィールド
+     A            STMID         18P 0       COLHDG('締めID')
+     A                                      TEXT('請求締めID')
+     A*
+     A* 締めの範囲
+     A            CUSTID         9P 0       COLHDG('顧客ID')
+     A                                      TEXT('顧客ID')
+     A            CLSDATE        8P 0       COLHDG('締め日')
+     A                                      TEXT('締め日')
+     A            PREVCLS        8P 0       COLHDG('前回' '締め日')
+     A                                      TEXT('前回の締め日(0=初回)')
+     A* 修正#CUR: 合計請求書の通貨(顧客の通貨。金額はすべてこの通貨)
+     A            CURRCD         3A         COLHDG('通貨')
+     A                                      TEXT('通貨コード')
+     A*
+     A* 金額
+     A            PREVBAL       15P 2       COLHDG('前回' '請求額')
+     A                                      TEXT('前回御請求額')
+     A            PAYAMT        15P 2       COLHDG('入金額')
+     A                                      TEXT('期間内の御入金額')
+     A            CARRY         15P 2       COLHDG('繰越額')
+     A                                      TEXT('繰越金額')
+     A            SALES         15P 2       COLHDG('今回' '売上額')
+     A                                      TEXT('今回お買上額(税抜)')
+     A            TAX           15P 2       COLHDG('消費税額')
+     A                                      TEXT('消費税額')
+     A            TOTAL         15P 2       COLHDG('今回' '請求額')
+     A                                      TEXT('今回御請求額')
+     A            INVCNT         5P 0       COLHDG('請求書' '件数')
+     A                                      TEXT('期間内の請求書の件数')
+     A*
+     A* 監査情報
+     A            CRTUSER       30O         COLHDG('作成者')
+     A                                      TEXT('作成ユーザー')
+     A            CRTDATE        8P 0       COLHDG('作成日')
+     A                                      TEXT('作成日付')
+     A            CRTTIM         6P 0       COLHDG('作成時刻')
+     A                                      TEXT('作成時刻')
+     A*
+     A* キー定義
+     A          K STMID

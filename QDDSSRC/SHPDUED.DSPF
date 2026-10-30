@@ -1,0 +1,52 @@
+     A* ==========================================================
+     A* SHPDUED - 出荷予定(未出荷の受注明細)の画面
+     A* 修正#DUE: 新規作成。SHPDUE から使う
+     A*   全角の定数の直後は1桁空けて項目を置く(SIと属性桁の重なり防止)
+     A* ==========================================================
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      CA03(03 'F3=終了')
+     A                                      CF04(04 'F4=検索')
+     A                                      CA12(12 'F12=戻る')
+     A                                      PRINT
+     A* ---- DSFL - 未出荷の明細(希望納期の早い順) ----
+     A          R DSFL                      SFL
+     A            DREQ          10A  O  7  2
+     A  61                                  COLOR(RED)
+     A            DSONUM        18A  O  7 13COLOR(GRN)
+     A            DCUST         10A  O  7 32
+     A            DITEM         10A  O  7 43
+     A            DREM           8A  O  7 54
+     A            DOH            8A  O  7 63
+     A  62                                  COLOR(RED)
+     A            DLATE          6A  O  7 72
+     A  61                                  COLOR(RED)
+     A          R DCTL                      SFLCTL(DSFL)
+     A                                      SFLSIZ(0999)
+     A                                      SFLPAG(0014)
+     A  91                                  SFLDSP
+     A  92                                  SFLDSPCTL
+     A  93                                  SFLCLR
+     A  94                                  SFLEND(*MORE)
+     A                                      OVERLAY
+     A                                  1  2'出荷予定(未出荷の受注)'
+     A                                      DSPATR(HI)
+     A                                  1 70DATE(*SYS) EDTCDE(Y)
+     A                                  3  2'倉庫'
+     A            DFWH          10A  B  3  9DSPATR(UL)
+     A                                  3 21'(空白=全倉庫)  Enter=検索'
+     A                                      COLOR(BLU)
+     A                                  4  2'赤=納期遅れ・在庫不足'
+     A                                      COLOR(BLU)
+     A            DSUM          60A  O  5  2COLOR(WHT)
+     A                                  6  2'希望納期'
+     A                                  6 13'受注番号'
+     A                                  6 32'顧客'
+     A                                  6 43'商品'
+     A                                  6 56'残数'
+     A                                  6 63'現在庫'
+     A                                  6 72'遅れ日'
+     A* ---- DFOOT ----
+     A          R DFOOT                     
+     A            DMSG          78A  O 22  2COLOR(RED)
+     A                                 23  2'F3=終了  F4=倉庫検索'
+     A                                      COLOR(BLU)

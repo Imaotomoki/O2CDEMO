@@ -1,0 +1,36 @@
+      *===============================================================
+      * 物理ファイル: PAYAPPLYP (入金充当明細)
+      * 説明: 入金と請求書の充当関係を管理する明細テーブル
+      *       1入金に対して複数請求書への充当を記録する
+      *===============================================================
+     A                                      UNIQUE
+     A          R APPREC
+     A                                      TEXT('入金充当明細レコード')
+     A*
+     A* キーフィールド
+     A            APPLYID       18P 0       COLHDG('充当ID')
+     A                                      TEXT('充当明細ID')
+     A*
+     A* 入金・請求書の紐づけ
+     A            PAYID         18P 0       COLHDG('入金ID')
+     A                                      TEXT('入金ID(PAYMENTPのキー)')
+     A            INVID         18P 0       COLHDG('請求ID')
+     A                                      TEXT('請求ID(INVOICEHPのキー)')
+     A*
+     A* 充当金額
+     A            APPLYAMT      15P 2       COLHDG('充当金額')
+     A                                      TEXT('充当金額')
+     A            APPLYDATE      8P 0       COLHDG('充当日')
+     A                                      TEXT('充当処理日付')
+     A*
+     A* 監査情報
+     A            CRTUSER       30O         COLHDG('作成者')
+     A                                      TEXT('作成ユーザー')
+     A            CRTDATE        8P 0       COLHDG('作成日')
+     A                                      TEXT('作成日付')
+     A            CRTTIM         6P 0       COLHDG('作成時刻')
+     A                                      TEXT('作成時刻')
+     A*
+     A* キー定義
+     A          K APPLYID
+
