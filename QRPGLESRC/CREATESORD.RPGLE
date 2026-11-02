@@ -20,6 +20,10 @@
       *            希望納期は日付演算(従来はYYYYMMDD+10で無効日付)
       *            明細金額は税抜(ORDERENTRY/請求書と統一)
       *   修正#NODSP DSPLYを廃止(バッチ実行で応答待ちになるため)
+      *   修正#RULE 受注入力(ORDERENTRY)と同じ業務ルールを確認する
+      *          取引停止の顧客・販売停止の商品は受注できない
+      *          与信限度額を超える受注はできない(限度額0は無制限)
+      *          通貨は顧客の通貨(JPY固定だった)
       *=====================================================================
 
       *---------------------------------------------------------------
@@ -42,6 +46,11 @@
      D W#SOID          S             18P 0
      D W#LINENO        S              9P 0
      D W#TOTAMT        S             15P 2
+      * 修正#RULE 与信チェック用
+     D W#AR            S             15P 2
+     D W#UNSHIP        S             15P 2
+     D W#UNBILL        S             15P 2
+     D W#NEWAMT        S             15P 2
      D W#LINEAMT       S             15P 2
      D W#FOUND         S               N
      D W#ERROR         S               N
@@ -122,6 +131,11 @@
      C                   IF        W#ERROR
      C                   EXSR      @END
      C                   ENDIF
+      * 修正#RULE 与信チェック(明細の合計が出てから)
+     C                   EXSR      @CHKCRD
+     C                   IF        W#ERROR
+     C                   EXSR      @END
+     C                   ENDIF
      C                   EXSR      @PRCHDR
      C                   EXSR      @END
 
@@ -167,6 +181,12 @@
      C                   IF        NOT W#FOUND
      C                   EVAL      W#ERROR = *ON
      C                   EVAL      W#ERRMSG = '顧客が見つかりません'
+     C                   LEAVESR
+     C                   ENDIF
+      * 修正#RULE 取引停止の顧客は受注できない
+     C                   IF        CUST_STATUS <> 'ACTIVE'
+     C                   EVAL      W#ERROR = *ON
+     C                   EVAL      W#ERRMSG = '取引停止の顧客です'
      C                   ENDIF
      C                   ENDSR
 
@@ -198,7 +218,11 @@
       * 修正#HDR: 日付として10日後(従来は数値+10で無効日付になった)
      C                   EVAL      REQDATE = %DEC(%DATE(WDATE8:*ISO) +
      C                             %DAYS(10):*ISO)
+      * 修正#RULE 通貨は顧客の通貨
+     C                   EVAL      CURRCD = CUST_CURRCD
+     C                   IF        CURRCD = *BLANKS
      C                   EVAL      CURRCD = 'JPY'
+     C                   ENDIF
      C                   EVAL      PAYTERM = 'NET30'
      C                   EVAL      WHID = W#WHID
      C                   EVAL      STATUS = 'ALLOCATED'
@@ -263,6 +287,12 @@
      C                   EVAL      W#ERRMSG = '商品が見つかりません'
      C                   LEAVESR
      C                   ENDIF
+      * 修正#RULE 販売停止の商品は受注できない
+     C                   IF        ITM_STATUS <> 'ACTIVE'
+     C                   EVAL      W#ERROR = *ON
+     C                   EVAL      W#ERRMSG = '販売停止の商品です'
+     C                   LEAVESR
+     C                   ENDIF
       * 修正#CMT: 数量は正の値のみ
      C                   IF        W#ORDQTY <= 0 OR W#UNITPRC < 0
      C                   EVAL      W#ERROR = *ON
@@ -325,6 +355,60 @@
      C                   EVAL      W#CNTR = W#CNTR + 1
       * 合計金額に加算
      C                   EVAL      W#TOTAMT = W#TOTAMT + W#LINEAMT
+     C                   ENDSR
+
+      *=====================================================================
+      * 修正#RULE @CHKCRD - 与信チェック(ORDERENTRYと同じ式)
+      *   未収残高+未出荷の受注額+出荷済未請求額+今回の受注額
+      *   (すべて税込)が与信限度額を超えたらエラー。限度額0は無制限
+      *=====================================================================
+     C     @CHKCRD       BEGSR
+     C                   IF        CUST_CREDLMT <= 0
+     C                   LEAVESR
+     C                   ENDIF
+     C/EXEC SQL
+     C+   SELECT COALESCE(SUM(BALANCE), 0) INTO :W#AR
+     C+     FROM INVOICEHP
+     C+    WHERE CUSTID = :W#CUSTID AND BALANCE > 0
+     C/END-EXEC
+     C                   IF        SQLCODE <> 0
+     C                   EVAL      W#ERROR = *ON
+     C                   EVAL      W#ERRMSG = '与信情報の取得に失敗しました'
+     C                   LEAVESR
+     C                   ENDIF
+     C/EXEC SQL
+     C+   SELECT COALESCE(SUM((L.ORDQTY - L.SHPQTY) * L.UNITPRC
+     C+          * (1 + L.TAXRATE)), 0) INTO :W#UNSHIP
+     C+     FROM SORDERLP L JOIN SORDERHP H ON H.SOID = L.SOID
+     C+    WHERE H.CUSTID = :W#CUSTID
+     C+      AND H.STATUS IN ('OPEN', 'ALLOCATED', 'PARTIAL')
+     C+      AND L.ORDQTY > L.SHPQTY
+     C/END-EXEC
+     C                   IF        SQLCODE <> 0
+     C                   EVAL      W#ERROR = *ON
+     C                   EVAL      W#ERRMSG = '与信情報の取得に失敗しました'
+     C                   LEAVESR
+     C                   ENDIF
+     C/EXEC SQL
+     C+   SELECT COALESCE(SUM(D.SHPQTY * L.UNITPRC
+     C+          * (1 + L.TAXRATE)), 0) INTO :W#UNBILL
+     C+     FROM SHIPMENTHP S
+     C+     JOIN SHIPMENTLP D ON D.SHPID = S.SHPID
+     C+     JOIN SORDERLP L ON L.SOID = S.SOID AND L.LINENO = D.SOLNO
+     C+     JOIN SORDERHP H ON H.SOID = S.SOID
+     C+    WHERE H.CUSTID = :W#CUSTID AND S.STATUS = 'SHIPPED'
+     C/END-EXEC
+     C                   IF        SQLCODE <> 0
+     C                   EVAL      W#ERROR = *ON
+     C                   EVAL      W#ERRMSG = '与信情報の取得に失敗しました'
+     C                   LEAVESR
+     C                   ENDIF
+     C                   EVAL(H)   W#NEWAMT = W#TOTAMT * (1 + W#TAXRATE)
+     C                   IF        W#NEWAMT > CUST_CREDLMT - W#AR - W#UNSHIP
+     C                             - W#UNBILL
+     C                   EVAL      W#ERROR = *ON
+     C                   EVAL      W#ERRMSG = '与信限度額を超えています'
+     C                   ENDIF
      C                   ENDSR
 
       *=====================================================================

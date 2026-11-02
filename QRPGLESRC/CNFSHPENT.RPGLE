@@ -112,7 +112,8 @@
      C                   EVAL      W#EOF = *OFF
       * 受注ヘッダーから全受注を読み込む
      C     *LOVAL        SETLL     SORDERHP
-     C                   DOW       NOT W#EOF
+      * 修正#9999 サブファイルの上限(9999件)で止める
+     C                   DOW       NOT W#EOF AND W#RRN < 9999
      C                   READ      SORDERHP                               99
      C                   EVAL      W#EOF = *IN99
      C                   IF        W#EOF

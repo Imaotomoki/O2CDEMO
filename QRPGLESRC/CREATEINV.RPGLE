@@ -70,6 +70,7 @@
       * 請求金額計算用
      D W#SUBTOTAL      S             15P 2
      D W#TAXAMT        S             15P 2
+     D W#TX1           S             15P 2
      D W#TOTAMT        S             15P 2
      D W#LINEAMT       S             15P 2
       * 明細用変数
@@ -279,8 +280,15 @@
      C                   EVAL      W#TAXAMT = 0
      C                   EVAL      W#K = 1
      C                   DOW       W#K <= W#TXN
-     C                   EVAL      W#TAXAMT = W#TAXAMT +
-     C                             %INT(W#TXBASE(W#K) * W#TXRT(W#K))
+      * 修正#FXTAX 外貨は小数2桁で切り捨て(照会・印刷と同じ。整数に
+      *   切り捨てて税が少なく保存されていた)
+     C                   IF        W#CURRCD <> 'JPY' AND
+     C                             W#CURRCD <> *BLANKS
+     C                   EVAL      W#TX1 = W#TXBASE(W#K) * W#TXRT(W#K)
+     C                   ELSE
+     C                   EVAL      W#TX1 = %INT(W#TXBASE(W#K) * W#TXRT(W#K))
+     C                   ENDIF
+     C                   EVAL      W#TAXAMT = W#TAXAMT + W#TX1
      C                   EVAL      W#K = W#K + 1
      C                   ENDDO
      C                   EVAL      W#TOTAMT = W#SUBTOTAL + W#TAXAMT

@@ -158,6 +158,13 @@
      C                   EVAL      W#MSG = '日数は1以上を入力してください'
      C                   ITER
      C                   ENDIF
+      * 修正#COND 条件を変えた回は一覧を作り直すだけ(古い一覧の
+      *   行に新しい条件で督促状を出し、履歴の回数も増やしていた)
+     C                   IF        BASEDT <> W#BASE8 OR MINDAYS <> W#MIN
+     C                   EXSR      @SETCOND
+     C                   EXSR      @LOAD
+     C                   ITER
+     C                   ENDIF
      C                   EXSR      @SETCOND
       * 1=督促状発行 (選択した顧客をまとめて1つのスプールに出す)
      C                   EVAL      W#NEW = 0
@@ -173,10 +180,13 @@
      C                   ENDIF
      C                   IF        %OPEN(DUNPRTF)
      C                   CLOSE     DUNPRTF
+      * 修正#HMSG 履歴の記録エラーを成功メッセージで消さない
+     C                   IF        W#MSG = *BLANKS
      C                   EVAL      W#MSG = Join('督促状を発行しました' +
      C                             '(新規 ' + %CHAR(W#NEW) + '社' +
      C                             '  再発行 ' + %CHAR(W#RE) + '社' +
      C                             '  スプール DUNPRTF)')
+     C                   ENDIF
      C                   ENDIF
      C                   EXSR      @LOAD
      C                   ENDDO
@@ -326,7 +336,12 @@
       * 50=外貨(小数2桁と通貨コード)
      C                   EVAL      *IN50 = (V#CUR <> 'JPY' AND V#CUR <> *BLANKS)
      C                   EVAL(H)   PBAL = V#BAL
+      * 修正#OVF 桁に収まらない金額・数量は*で表示(異常終了していた)
+     C                   MONITOR
      C                   EVALR     PBALF = %EDITC(%DEC(V#BAL:11:2):'1')
+     C                   ON-ERROR
+     C                   EVAL      PBALF = *ALL'*'
+     C                   ENDMON
      C                   EVAL      PCUR = V#CUR
      C                   WRITE     PDETAIL
       * 通貨ごとの合計(督促状用)と円換算の合計(履歴用)
@@ -356,7 +371,11 @@
      C                   EVAL      *IN50 = (W#TCUR(W#K) <> 'JPY' AND
      C                             W#TCUR(W#K) <> *BLANKS)
      C                   EVAL(H)   PTOTBAL = W#TAMT(W#K)
+     C                   MONITOR
      C                   EVALR     PTOTF = %EDITC(%DEC(W#TAMT(W#K):11:2):'1')
+     C                   ON-ERROR
+     C                   EVAL      PTOTF = *ALL'*'
+     C                   ENDMON
      C                   EVAL      PTCUR = W#TCUR(W#K)
      C                   WRITE     PTOTAL
      C                   ENDFOR
@@ -367,6 +386,10 @@
      C                   EVAL      PMSG6 = Join('ご不明な点がございました' +
      C                             'ら、担当までご連絡ください。')
      C                   WRITE     PEND
+      * 修正#ZERO 対象の請求書がなくなっていたら記録しない
+     C                   IF        W#CNT = 0
+     C                   LEAVESR
+     C                   ENDIF
       * 履歴に記録(再発行は記録しない)
      C                   IF        W#REISSUE
      C                   EVAL      W#RE = W#RE + 1

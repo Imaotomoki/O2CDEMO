@@ -63,8 +63,11 @@
      D W#SOLINENO      S              9P 0
      D W#TIM6C         S              6A
      D W#USER          S             30A
+     D PSDS           SDS
+     D   P#USER              254    263A
       * [修正#PART] 出荷モード/明細別出荷数量(受注明細行番号順)
      D W#MODE          S              1A
+     D W#MD            S              1A
      D W#P_SHPQTY      S             15P 3 DIM(20)
      D W#REMQTY        S             15P 3
      D W#SHIPLN        S             10I 0
@@ -96,9 +99,10 @@
      C                   PARM                    W#MODE
      C                   PARM                    W#P_SHPQTY
 
-      * [修正#SHPID] シーケンスはSQL命名で修飾して解決
+      * [修正#SHPID] シーケンスはライブラリーリストから解決
+      *   (修正#NAM SQL命名ではユーザー名と同じスキーマを探していた)
      C/EXEC SQL
-     C+   SET OPTION COMMIT = *NONE, NAMING = *SQL
+     C+   SET OPTION COMMIT = *NONE
      C/END-EXEC
 
       *=====================================================================
@@ -132,11 +136,12 @@
      C                   EVAL      W#ERROR = *OFF
      C                   EVAL      W#LINENO = *ZERO
       * W#SOID / W#WHID は *ENTRY PLIST で受け取る
-     C                   IF        %PARMS < 4
-     C                   EVAL      W#MODE = 'A'
+      * 修正#PRM 省略されたパラメーターは参照しない(MCH3601になる)
+     C                   EVAL      W#MD = 'A'
+     C                   IF        %PARMS >= 4
+     C                   IF        W#MODE = 'P'
+     C                   EVAL      W#MD = 'P'
      C                   ENDIF
-     C                   IF        W#MODE <> 'P'
-     C                   EVAL      W#MODE = 'A'
      C                   ENDIF
      C                   ENDSR
 
@@ -152,7 +157,7 @@
      C                   LEAVESR
      C                   ENDIF
       * 監査フィールド用に受注ヘッダーから作成ユーザーを取得
-     C                   EVAL      W#USER = CRTUSER
+     C                   EVAL      W#USER = P#USER
       * ステータスチェック
       * [修正#PART] 一部出荷(PARTIAL)の残りも出荷できる
      C                   IF        STATUS <> 'ALLOCATED' AND
@@ -210,7 +215,7 @@
      C                   IF        W#REMQTY <= 0
      C                   ITER
      C                   ENDIF
-     C                   IF        W#MODE = 'P'
+     C                   IF        W#MD = 'P'
      C                   IF        W#SOLINENO <= 20
      C                   EVAL      W#SHPQTY = W#P_SHPQTY(W#SOLINENO)
      C                   ELSE

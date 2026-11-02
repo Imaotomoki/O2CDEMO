@@ -13,6 +13,8 @@
      D W#CNT           S              9P 0
      D W#LATE          S              9P 0
      D W#SHORT         S              9P 0
+     D W#SQLCD         S             10I 0
+     D W#CNTC          S             10A
      D W#PVAL          S             30A
      D W#FWH           S             10A
      D W#TODAY         S               D
@@ -34,6 +36,8 @@
      D   pMax                        10I 0 CONST
      D Fit9            PR             9P 0
      D   pAmt                        15P 2 CONST
+     D FmtQ8           PR             8A
+     D   pQty                        15P 3 CONST
      D FmtDate         PR            10A
      D   pDate                        8P 0 CONST
 
@@ -107,8 +111,8 @@
      C                   EVAL      DSONUM = S#SONUM
      C                   EVAL      DCUST = S#CUST
      C                   EVAL      DITEM = S#ITEM
-     C                   EVALR     DREM = %EDITC(%DECH(S#REM:7:0):'1')
-     C                   EVALR     DOH = %EDITC(%DECH(S#OH:7:0):'1')
+     C                   EVAL      DREM = FmtQ8(S#REM)
+     C                   EVAL      DOH = FmtQ8(S#OH)
       * 遅れ日(希望納期を過ぎた日数)
      C                   EVAL      W#DAYS = 0
      C                   MONITOR
@@ -133,18 +137,48 @@
      C                   EVAL      W#RRN = W#CNT
      C                   WRITE     DSFL
      C                   ENDDO
+      * 修正#SUM 999行で打ち切ったら件数に+、SQLエラーは表示
+     C                   EVAL      W#SQLCD = SQLCODE
      C/EXEC SQL
      C+   CLOSE DUECSR
      C/END-EXEC
      C                   EVAL      *IN61 = *OFF
      C                   EVAL      *IN62 = *OFF
-     C                   EVAL      DSUM = '未出荷 ' + %CHAR(W#CNT) +
-     C                             ' 行  うち納期遅れ ' + %CHAR(W#LATE) +
+     C                   EVAL      W#CNTC = %CHAR(W#CNT)
+     C                   IF        W#SQLCD = 0
+     C                   EVAL      W#CNTC = %TRIM(W#CNTC) + '+'
+     C                   ENDIF
+     C                   EVAL      DSUM = '未出荷 ' + %TRIM(W#CNTC) +
+     C                             ' 行  納期遅れ ' + %CHAR(W#LATE) +
      C                             ' 行・在庫不足 ' + %CHAR(W#SHORT) + ' 行'
-     C                   IF        W#CNT = 0
+     C                   IF        W#SQLCD < 0
+     C                   EVAL      DMSG = '読み込みエラー SQLCODE=' +
+     C                             %CHAR(W#SQLCD)
+     C                   ELSEIF    W#CNT = 0
      C                   EVAL      DMSG = '未出荷の受注はありません'
      C                   ENDIF
      C                   ENDSR
+
+      *=====================================================================
+      * FmtQ8 - 数量を右寄せ8桁に(修正#Q8 100万以上は左が欠けていた)
+      *   7桁まではカンマ付き(100万以上はカンマなし)、超えたら*
+      *=====================================================================
+     P FmtQ8           B
+     D FmtQ8           PI             8A
+     D   pQty                        15P 3 CONST
+     D wOut            S              8A
+     D wQty            S             15P 0
+     C                   EVAL(H)   wQty = pQty
+     C                   IF        wQty > 9999999 OR wQty < -999999
+     C                   RETURN    *ALL'*'
+     C                   ENDIF
+     C                   IF        wQty > 999999 OR wQty < -99999
+     C                   EVALR     wOut = %EDITC(%DEC(wQty:7:0):'3')
+     C                   ELSE
+     C                   EVALR     wOut = %EDITC(%DEC(wQty:7:0):'1')
+     C                   ENDIF
+     C                   RETURN    wOut
+     P FmtQ8           E
 
       *=====================================================================
       * Fit9 - 9桁(999,999,999)に収めて四捨五入

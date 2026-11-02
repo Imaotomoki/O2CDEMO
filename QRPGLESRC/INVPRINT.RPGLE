@@ -58,6 +58,15 @@
      C                             W#ESCMSG:%LEN(%TRIMR(W#ESCMSG)):
      C                             '*ESCAPE':'*PGMBDY':1:W#MSGKEY:W#APIERR)
      C                   ENDIF
+      * 修正#CNL 取消済の請求書は印刷しない(再印刷のCALLで出ていた)
+     C                   IF        STATUS = 'CANCELLED'
+     C                   EVAL      W#ESCMSG = '取消済の請求書です: ' +
+     C                             %TRIM(W#INVNUM)
+     C                   EVAL      *INLR = *ON
+     C                   CALLP     QMHSNDPM('CPF9898':'QCPFMSG   *LIBL':
+     C                             W#ESCMSG:%LEN(%TRIMR(W#ESCMSG)):
+     C                             '*ESCAPE':'*PGMBDY':1:W#MSGKEY:W#APIERR)
+     C                   ENDIF
 
       * 修正#CUR: 外貨は金額を小数2桁の文字で印字する
      C                   EVAL      *IN50 = (CURRCD <> 'JPY' AND
@@ -104,8 +113,17 @@
      C                   EVAL(H)   PQTY = L_QTY
      C                   EVAL(H)   PUNITPRC = L_UNITPRC
      C                   EVAL(H)   PLINEAMT = L_LINEAMT
+      * 修正#OVF 桁に収まらない金額・数量は*で表示(異常終了していた)
+     C                   MONITOR
      C                   EVALR     PUNITPRCF = %EDITC(%DEC(L_UNITPRC:11:2):'1')
+     C                   ON-ERROR
+     C                   EVAL      PUNITPRCF = *ALL'*'
+     C                   ENDMON
+     C                   MONITOR
      C                   EVALR     PLINEAMTF = %EDITC(%DEC(L_LINEAMT:13:2):'1')
+     C                   ON-ERROR
+     C                   EVAL      PLINEAMTF = *ALL'*'
+     C                   ENDMON
      C                   EVAL(H)   PTAXPCT = L_TAXRATE * 100
      C                   WRITE     PDETAIL
       * 税率別に税抜金額を集計
@@ -140,7 +158,11 @@
      C                   EVAL      PTXAMT = W#TXAMT
      C                   EVALR     PTXBASEF = %EDITC(%DEC(W#TXBASE(W#K):
      C                             13:2):'1')
+     C                   MONITOR
      C                   EVALR     PTXAMTF = %EDITC(%DEC(W#TXAMT:13:2):'1')
+     C                   ON-ERROR
+     C                   EVAL      PTXAMTF = *ALL'*'
+     C                   ENDMON
      C                   WRITE     PTAXL
      C                   EVAL      W#K = W#K + 1
      C                   ENDDO
@@ -149,9 +171,21 @@
      C                   EVAL(H)   PSUBTOT = SUBTOT
      C                   EVAL(H)   PTAXAMT = TAXAMT
      C                   EVAL(H)   PTOTAMT = TOTAMT
+     C                   MONITOR
      C                   EVALR     PSUBTOTF = %EDITC(%DEC(SUBTOT:13:2):'1')
+     C                   ON-ERROR
+     C                   EVAL      PSUBTOTF = *ALL'*'
+     C                   ENDMON
+     C                   MONITOR
      C                   EVALR     PTAXAMTF = %EDITC(%DEC(TAXAMT:13:2):'1')
+     C                   ON-ERROR
+     C                   EVAL      PTAXAMTF = *ALL'*'
+     C                   ENDMON
+     C                   MONITOR
      C                   EVALR     PTOTAMTF = %EDITC(%DEC(TOTAMT:13:2):'1')
+     C                   ON-ERROR
+     C                   EVAL      PTOTAMTF = *ALL'*'
+     C                   ENDMON
      C                   WRITE     PTOTAL
 
      C                   EVAL      *INLR = *ON
