@@ -125,7 +125,9 @@
      C                   ENDMON
      C                   EVAL      W#Y = %DIV(W#END:100)
      C                   EVAL      W#M = %REM(W#END:100)
-     C                   IF        W#Y < 1900 OR W#M < 1 OR W#M > 12
+      * 修正#Y9999 9999年12月の翌月で年があふれるので上限を設ける
+     C                   IF        W#Y < 1900 OR W#Y > 9998 OR
+     C                             W#M < 1 OR W#M > 12
      C                   EVAL      *IN31 = *ON
      C                   EVAL      MMSG = '年月はYYYYMMで入力'
      C                   EVAL      MEND = %SUBST(%CHAR(%DATE():*ISO0):1:6)

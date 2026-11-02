@@ -10,6 +10,8 @@
       *           在庫が変わった場合は反映しない(再表示を求める)
       *   増減は在庫移動履歴 STKMOVEP に記録する
       *   更新はコミットメント制御で一括確定(失敗時は全て取消)
+      *   修正#CNT2 棚卸: 差異が7桁を超える実棚数はエラー(異常終了
+      *          していた)。実棚数を変えた直後のF6は確認表示だけ
       *=====================================================================
      FSTKMNTD   CF   E             WORKSTN SFILE(CNTSFL:W#RRN)
 
@@ -21,6 +23,8 @@
      D W#ERR           S               N
      D W#CHG           S             10I 0
      D W#FIRST         S              4S 0
+      * 棚卸: 前回の確認から実棚数が変わった
+     D W#NEW           S               N
      D W#WHID          S              4P 0
      D W#WHNM          S             60A
      D W#WHDSP         S             60A
@@ -290,7 +294,7 @@
      C                             'りません')
      C                   ITER
      C                   ENDIF
-     C                   IF        NOT W#F6
+     C                   IF        NOT W#F6 OR W#NEW
      C                   EVAL      CMSG = Join('差異のある商品 ' +
      C                             %CHAR(W#CHG) +
      C                             ' 件。F6で在庫に反映します')
@@ -350,6 +354,7 @@
      C                   EVAL      W#ERR = *OFF
      C                   EVAL      W#CHG = 0
      C                   EVAL      W#FIRST = 0
+     C                   EVAL      W#NEW = *OFF
      C                   FOR       W#I = 1 TO W#CNT
      C                   EVAL      W#RRN = W#I
      C     W#RRN         CHAIN     CNTSFL
@@ -369,6 +374,13 @@
      C                   EVAL      CMSG = Join(%TRIM(CITEMCD) + ' 引当済数(' +
      C                             %CHAR(CALC) + ')より少なくはできません')
      C                   ENDIF
+     C                   ELSEIF    CACT - CBOOK > 9999999 OR
+     C                             CACT - CBOOK < -9999999
+     C                   EVAL      *IN45 = *ON
+     C                   IF        W#FIRST = 0
+     C                   EVAL      CMSG = Join(%TRIM(CITEMCD) +
+     C                             ' 帳簿在庫との差異が大きすぎます')
+     C                   ENDIF
      C                   ENDIF
      C                   IF        *IN45
      C                   EVAL      W#ERR = *ON
@@ -376,7 +388,13 @@
      C                   EVAL      W#FIRST = W#I
      C                   ENDIF
      C                   ENDIF
+      * 差異が前回の表示と違えば実棚数が変わった(F6は確認だけ)
+     C                   IF        NOT *IN45
+     C                   IF        CACT - CBOOK <> CDIFF
+     C                   EVAL      W#NEW = *ON
+     C                   ENDIF
      C                   EVAL      CDIFF = CACT - CBOOK
+     C                   ENDIF
      C                   IF        CACT <> CORGOH
      C                   EVAL      W#CHG = W#CHG + 1
      C                   ENDIF

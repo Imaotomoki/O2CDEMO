@@ -8,7 +8,8 @@
      A                                      CA03(03 'F3=End')
      A* 修正#F4P: CF04(F4でも入力を返す。カーソル位置で検索先を決める)
      A                                      CF04(04 'F4=Srch')
-     A                                      CA06(06 'F6=Reg')
+     A* 修正#F6: CF06(明細の入力を返す。CA06では入力中の行が捨てられた)
+     A                                      CF06(06 'F6=Reg')
      A                                      CA12(12 'F12=Bk')
      A                                      PRINT
      A                                      ERRSFL

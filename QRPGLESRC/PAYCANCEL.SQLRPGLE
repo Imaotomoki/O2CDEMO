@@ -356,12 +356,30 @@
      C                   LEAVESR
      C                   ENDIF
       * ロックした後の消込を読み直して、請求書ごとに戻す
-     C                   EXSR      @LOADAPP
-     C                   EVAL      W#K = 1
-     C                   DOW       W#K <= W#AN
-     C                   EVAL      A#INVID = W#AINV(W#K)
-     C                   EVAL      A#AMT = W#AAMT(W#K)
-     C                   EVAL      A#NEG = - W#AAMT(W#K)
+      * 修正#APN カーソルを直接読む(配列は100件までで、超えた分の
+      *   請求書が戻らないまま確定していた。読込エラーも取消す)
+     C/EXEC SQL
+     C+   OPEN APPCSR
+     C/END-EXEC
+     C                   IF        SQLCODE <> 0
+     C                   EVAL      W#MSG = '消込の読み込みエラー'
+     C                   EXSR      @ROLLBK
+     C                   LEAVESR
+     C                   ENDIF
+     C                   DOW       *ON
+     C/EXEC SQL
+     C+   FETCH APPCSR INTO :A#INVID, :A#INVNUM, :A#INVDT, :A#AMT, :A#BAL
+     C/END-EXEC
+     C                   IF        SQLCODE = 100
+     C                   LEAVE
+     C                   ENDIF
+     C                   IF        SQLCODE <> 0
+     C                   EVAL      W#MSG = '消込の読み込みエラー'
+     C                   EXSR      @CLSAPP
+     C                   EXSR      @ROLLBK
+     C                   LEAVESR
+     C                   ENDIF
+     C                   EVAL      A#NEG = - A#AMT
      C/EXEC SQL
      C+   UPDATE INVOICEHP
      C+      SET PAIDAMT = PAIDAMT - :A#AMT,
@@ -373,6 +391,7 @@
      C/END-EXEC
      C                   IF        SQLCODE <> 0
      C                   EVAL      W#MSG = '請求書の更新エラー'
+     C                   EXSR      @CLSAPP
      C                   EXSR      @ROLLBK
      C                   LEAVESR
      C                   ENDIF
@@ -387,11 +406,12 @@
      C/END-EXEC
      C                   IF        SQLCODE <> 0
      C                   EVAL      W#MSG = '消込明細の登録エラー'
+     C                   EXSR      @CLSAPP
      C                   EXSR      @ROLLBK
      C                   LEAVESR
      C                   ENDIF
-     C                   EVAL      W#K = W#K + 1
      C                   ENDDO
+     C                   EXSR      @CLSAPP
      C/EXEC SQL
      C+   COMMIT
      C/END-EXEC
@@ -400,6 +420,13 @@
      C                   EXSR      @ROLLBK
      C                   LEAVESR
      C                   ENDIF
+     C                   ENDSR
+
+      * @CLSAPP - 消込のカーソルを閉じる
+     C     @CLSAPP       BEGSR
+     C/EXEC SQL
+     C+   CLOSE APPCSR
+     C/END-EXEC
      C                   ENDSR
 
       * @ROLLBK - エラーのときは取消をすべて元に戻す
@@ -417,9 +444,18 @@
      D   pCur                         3A   CONST
      D wOut            S             15A
      C                   IF        pCur = 'JPY' OR pCur = *BLANKS
+      * 修正#OVF 桁に収まらない金額・数量は*で表示(異常終了していた)
+     C                   MONITOR
      C                   EVALR     wOut = %EDITC(%DECH(pAmt:11:0):'J')
+     C                   ON-ERROR
+     C                   EVAL      wOut = *ALL'*'
+     C                   ENDMON
      C                   ELSE
+     C                   MONITOR
      C                   EVALR     wOut = %EDITC(%DECH(pAmt:11:2):'J')
+     C                   ON-ERROR
+     C                   EVAL      wOut = *ALL'*'
+     C                   ENDMON
      C                   ENDIF
      C                   RETURN    wOut
      P FmtAmt          E

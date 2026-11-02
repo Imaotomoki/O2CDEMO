@@ -282,7 +282,17 @@
      D FmtQ10          PI            10A
      D   pQty                        15P 3 CONST
      D wOut            S             10A
-     C                   EVALR     wOut = %EDITC(%DECH(pQty:7:0):'J')
+     D wQty            S             15P 0
+      * 修正#Q10 7桁を超える数量はカンマなし、9桁を超えたら*
+     C                   EVAL(H)   wQty = pQty
+     C                   IF        wQty > 999999999 OR wQty < -999999999
+     C                   RETURN    *ALL'*'
+     C                   ENDIF
+     C                   IF        wQty > 9999999 OR wQty < -9999999
+     C                   EVALR     wOut = %EDITC(%DEC(wQty:9:0):'L')
+     C                   ELSE
+     C                   EVALR     wOut = %EDITC(%DEC(wQty:7:0):'J')
+     C                   ENDIF
      C                   RETURN    wOut
      P FmtQ10          E
 
@@ -291,6 +301,10 @@
      D FmtQ12          PI            12A
      D   pQty                        15P 3 CONST
      D wOut            S             12A
+     C                   IF        pQty >= 999999999.5 OR
+     C                             pQty <= -999999999.5
+     C                   RETURN    *ALL'*'
+     C                   ENDIF
      C                   EVALR     wOut = %EDITC(%DECH(pQty:9:0):'J')
      C                   RETURN    wOut
      P FmtQ12          E

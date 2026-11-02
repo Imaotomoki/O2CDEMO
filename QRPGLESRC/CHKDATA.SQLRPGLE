@@ -19,6 +19,7 @@
 
      D W#RRN           S              4S 0
      D W#CNT           S              9P 0
+     D W#SQLCD         S             10I 0
      D S#N             S             10I 0
      D S#K             S             30A
      D S#A             S             20A
@@ -153,11 +154,16 @@
      C                   EVAL      W#RRN = W#CNT
      C                   WRITE     RSFL
      C                   ENDDO
+      * 修正#SQLE 読み込みエラーを「不一致なし」と表示しない
+     C                   EVAL      W#SQLCD = SQLCODE
      C/EXEC SQL
      C+   CLOSE CHKCSR
      C/END-EXEC
      C                   EVALR     RCNT = %CHAR(W#CNT)
-     C                   IF        W#CNT = 0
+     C                   IF        W#SQLCD < 0
+     C                   EVAL      RMSG = 'チェックのSQLエラー SQLCODE=' +
+     C                             %CHAR(W#SQLCD)
+     C                   ELSEIF    W#CNT = 0
      C                   EVAL      RMSG = '不一致はありません'
      C                   ELSE
      C                   EVAL      RMSG = '不一致があります。原因を確認'

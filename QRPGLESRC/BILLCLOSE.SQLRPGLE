@@ -155,6 +155,14 @@
      C                   IF        W#ERR
      C                   ITER
      C                   ENDIF
+      * 修正#DAY 締日を保存した回は一覧を作り直すだけ(古い判定の
+      *   まま締めていた)。選択は作り直した一覧でやり直す
+     C                   IF        W#DAYCHG > 0
+     C                   EVAL      W#MSG = Join(%TRIMR(W#MSG) +
+     C                             '。締めは再度1で')
+     C                   EXSR      @LOAD
+     C                   ITER
+     C                   ENDIF
      C                   EXSR      @OPTIONS
      C                   EXSR      @LOAD
      C                   ENDDO
@@ -223,6 +231,12 @@
      C/EXEC SQL
      C+   CLOSE CUSCSR
      C/END-EXEC
+      * 修正#999 上限で打ち切ったことを知らせる
+     C                   IF        W#CNT >= 999 AND W#MSG = *BLANKS
+     C                   EVAL      W#MSG = Join(
+     C                             '顧客が多いため先頭の999社だけ' +
+     C                             'を表示しています')
+     C                   ENDIF
      C                   IF        W#CNT = 0 AND W#MSG = *BLANKS
      C                   EVAL      W#MSG = '顧客が登録されていません'
      C                   ENDIF
@@ -387,6 +401,10 @@
      C                   IF        W#NEW + W#RE + W#NG = 0
      C                   LEAVESR
      C                   ENDIF
+      * 修正#MSG @CLOSEでエラーの理由を設定したらそれを表示する
+     C                   IF        W#MSG <> *BLANKS
+     C                   LEAVESR
+     C                   ENDIF
      C                   IF        W#NG > 0 AND W#NEW + W#RE = 0
      C                   EVAL      W#MSG = Join(
      C                             '締日が締め日に合わない顧客は' +
@@ -410,6 +428,9 @@
      C+    WHERE CUSTID = :W#CUSTID AND CLSDATE >= :W#CLS
      C/END-EXEC
      C                   IF        W#LATER > 0
+      * 修正#MSG 理由を表示する(締日が合わないと表示していた)
+     C                   EVAL      W#MSG = Join(%TRIM(SCUSTCD) +
+     C                             ' は締め日以降に締め済みです')
      C                   EVAL      W#NG = W#NG + 1
      C                   LEAVESR
      C                   ENDIF
@@ -479,12 +500,37 @@
      C                   EVAL(H)   PSALES = W#SALES
      C                   EVAL(H)   PTAX = W#TAX
      C                   EVAL(H)   PTOTAL = W#TOTAL
+      * 修正#OVF 桁に収まらない金額・数量は*で表示(異常終了していた)
+     C                   MONITOR
      C                   EVALR     PPREVF = %EDITC(%DEC(W#PREV:11:2):'N')
+     C                   ON-ERROR
+     C                   EVAL      PPREVF = *ALL'*'
+     C                   ENDMON
+     C                   MONITOR
      C                   EVALR     PPAYF = %EDITC(%DEC(W#PAY:11:2):'N')
+     C                   ON-ERROR
+     C                   EVAL      PPAYF = *ALL'*'
+     C                   ENDMON
+     C                   MONITOR
      C                   EVALR     PCARRYF = %EDITC(%DEC(W#CARRY:11:2):'N')
+     C                   ON-ERROR
+     C                   EVAL      PCARRYF = *ALL'*'
+     C                   ENDMON
+     C                   MONITOR
      C                   EVALR     PSALESF = %EDITC(%DEC(W#SALES:11:2):'N')
+     C                   ON-ERROR
+     C                   EVAL      PSALESF = *ALL'*'
+     C                   ENDMON
+     C                   MONITOR
      C                   EVALR     PTAXF = %EDITC(%DEC(W#TAX:11:2):'N')
+     C                   ON-ERROR
+     C                   EVAL      PTAXF = *ALL'*'
+     C                   ENDMON
+     C                   MONITOR
      C                   EVALR     PTOTALF = %EDITC(%DEC(W#TOTAL:11:2):'N')
+     C                   ON-ERROR
+     C                   EVAL      PTOTALF = *ALL'*'
+     C                   ENDMON
      C                   WRITE     PHEAD
      C                   EVAL      *IN90 = *OFF
      C/EXEC SQL
@@ -508,9 +554,21 @@
      C                   EVAL(H)   PISUB = V#SUB
      C                   EVAL(H)   PITAX = V#TAX
      C                   EVAL(H)   PITOT = V#TOT
+     C                   MONITOR
      C                   EVALR     PISUBF = %EDITC(%DEC(V#SUB:11:2):'N')
+     C                   ON-ERROR
+     C                   EVAL      PISUBF = *ALL'*'
+     C                   ENDMON
+     C                   MONITOR
      C                   EVALR     PITAXF = %EDITC(%DEC(V#TAX:11:2):'N')
+     C                   ON-ERROR
+     C                   EVAL      PITAXF = *ALL'*'
+     C                   ENDMON
+     C                   MONITOR
      C                   EVALR     PITOTF = %EDITC(%DEC(V#TOT:11:2):'N')
+     C                   ON-ERROR
+     C                   EVAL      PITOTF = *ALL'*'
+     C                   ENDMON
      C                   WRITE     PDETAIL
      C                   EVAL      W#PCNT = W#PCNT + 1
      C                   ENDDO

@@ -51,6 +51,7 @@
      D A#BEF           S             15P 3
      D A#AFT           S             15P 3
      D W#AN            S             10I 0
+     D W#LSQL          S             10I 0
      D W#ASOL          S              9P 0 DIM(100)
      D W#AITM          S              9P 0 DIM(100)
      D W#ACD           S             12A   DIM(100)
@@ -317,6 +318,7 @@
      C                   EVAL      W#AQTY(W#AN) = A#QTY
      C                   EVAL      W#ASOS(W#AN) = A#SOSHP
      C                   ENDDO
+     C                   EVAL      W#LSQL = SQLCODE
      C/EXEC SQL
      C+   CLOSE LINCSR
      C/END-EXEC
@@ -346,6 +348,14 @@
      C                   LEAVESR
      C                   ENDIF
      C                   EXSR      @LOADLIN
+      * 修正#LIN 明細を読めない・多すぎるときは取消さない(在庫と
+      *   受注明細を戻さないまま出荷だけ取消済になっていた)
+     C                   IF        W#LSQL < 0 OR W#AN = 0 OR
+     C                             (W#LSQL = 0 AND W#AN >= 100)
+     C                   EVAL      W#MSG = '出荷明細の読み込みエラー'
+     C                   EXSR      @ROLLBK
+     C                   LEAVESR
+     C                   ENDIF
      C                   EVAL      W#K = 1
      C                   DOW       W#K <= W#AN
      C                   EVAL      A#SOLNO = W#ASOL(W#K)
@@ -365,15 +375,7 @@
      C                   LEAVESR
      C                   ENDIF
       * 在庫の現在庫と引当済を戻す(引当し直すので有効在庫は変わらない)
-     C/EXEC SQL
-     C+   SELECT QTYOH INTO :A#BEF FROM INVENTORYP
-     C+    WHERE WHID = :S#WHID AND ITEMID = :A#ITEMID
-     C/END-EXEC
-     C                   IF        SQLCODE <> 0
-     C                   EVAL      W#MSG = '在庫が見つかりません'
-     C                   EXSR      @ROLLBK
-     C                   LEAVESR
-     C                   ENDIF
+      * 修正#BEF 先に更新(ロック)してから読み、変更前は逆算する
      C/EXEC SQL
      C+   UPDATE INVENTORYP
      C+      SET QTYOH = QTYOH + :A#QTY, QTYALC = QTYALC + :A#QTY,
@@ -385,7 +387,16 @@
      C                   EXSR      @ROLLBK
      C                   LEAVESR
      C                   ENDIF
-     C                   EVAL      A#AFT = A#BEF + A#QTY
+     C/EXEC SQL
+     C+   SELECT QTYOH INTO :A#AFT FROM INVENTORYP
+     C+    WHERE WHID = :S#WHID AND ITEMID = :A#ITEMID
+     C/END-EXEC
+     C                   IF        SQLCODE <> 0
+     C                   EVAL      W#MSG = '在庫が見つかりません'
+     C                   EXSR      @ROLLBK
+     C                   LEAVESR
+     C                   ENDIF
+     C                   EVAL      A#BEF = A#AFT - A#QTY
      C/EXEC SQL
      C+   INSERT INTO STKMOVEP
      C+     (MOVID, WHID, ITEMID, MOVTYPE, MOVQTY, BEFQTY, AFTQTY,

@@ -292,13 +292,34 @@
      C                   EVAL      QITEM = *BLANKS
      C                   ENDIF
      C                   EVAL      QDESC = DbcsTrunc(%TRIMR(L_DESC):19)
+      * 修正#OVF 桁に収まらない金額・数量は*で表示(異常終了していた)
+     C                   MONITOR
      C                   EVALR     QQTY = %EDITC(%DECH(L_QTY:6:0):'1')
+     C                   ON-ERROR
+     C                   EVAL      QQTY = *ALL'*'
+     C                   ENDMON
      C                   IF        W#FRN
+     C                   MONITOR
      C                   EVALR     QUPRC = %EDITC(%DECH(L_UNITPRC:9:2):'1')
+     C                   ON-ERROR
+     C                   EVAL      QUPRC = *ALL'*'
+     C                   ENDMON
+     C                   MONITOR
      C                   EVALR     QLAMT = %EDITC(%DECH(L_LINEAMT:11:2):'1')
+     C                   ON-ERROR
+     C                   EVAL      QLAMT = *ALL'*'
+     C                   ENDMON
      C                   ELSE
+     C                   MONITOR
      C                   EVALR     QUPRC = %EDITC(%DECH(L_UNITPRC:9:0):'1')
+     C                   ON-ERROR
+     C                   EVAL      QUPRC = *ALL'*'
+     C                   ENDMON
+     C                   MONITOR
      C                   EVALR     QLAMT = %EDITC(%DECH(L_LINEAMT:11:0):'1')
+     C                   ON-ERROR
+     C                   EVAL      QLAMT = *ALL'*'
+     C                   ENDMON
      C                   ENDIF
      C                   EVALR     QLTAX = %CHAR(%DECH(L_TAXRATE * 100:3:0))
      C                             + '%'
@@ -363,9 +384,17 @@
      D   pAmt                        15P 2 CONST
      D wOut            S             15A
      C                   IF        W#FRN
+     C                   MONITOR
      C                   EVALR     wOut = %EDITC(%DECH(pAmt:11:2):'J')
+     C                   ON-ERROR
+     C                   EVAL      wOut = *ALL'*'
+     C                   ENDMON
      C                   ELSE
+     C                   MONITOR
      C                   EVALR     wOut = %EDITC(%DECH(pAmt:11:0):'J')
+     C                   ON-ERROR
+     C                   EVAL      wOut = *ALL'*'
+     C                   ENDMON
      C                   ENDIF
      C                   RETURN    wOut
      P FmtAmt          E

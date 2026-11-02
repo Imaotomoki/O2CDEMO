@@ -13,6 +13,7 @@
 
      D W#RRN           S              4S 0
      D W#CNT           S              4S 0
+     D W#SQLCD         S             10I 0
      D W#DONE          S               N
      D W#PVAL          S             30A
      D W#LIKE          S             21A   VARYING
@@ -168,12 +169,17 @@
      C                   EVAL      W#RRN = W#CNT
      C                   WRITE     LSFL
      C                   ENDDO
+      * 修正#SQLE 読み込みエラーを「該当なし」と表示しない
+     C                   EVAL      W#SQLCD = SQLCODE
      C/EXEC SQL
      C+   CLOSE LSTCSR
      C/END-EXEC
      C                   EVAL      *IN61 = *OFF
      C                   EVAL      *IN62 = *OFF
-     C                   IF        W#CNT = 0 AND LMSG = *BLANKS
+     C                   IF        W#SQLCD < 0
+     C                   EVAL      LMSG = '読み込みエラー SQLCODE=' +
+     C                             %CHAR(W#SQLCD)
+     C                   ELSEIF    W#CNT = 0 AND LMSG = *BLANKS
      C                   EVAL      LMSG = '該当する顧客がありません'
      C                   ENDIF
      C                   ENDSR

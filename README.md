@@ -155,7 +155,7 @@ F3 でメニューを終了します。
 | `INVOICEHP` / `INVOICELP` | 請求ヘッダー / 明細 | `O2C_INVID_SEQ` |
 | `PAYMENTP` | 入金 | `O2C_PAYID_SEQ` |
 | `PAYAPPLYP` | 入金の消込明細 | `O2C_APPLYID_SEQ` |
-| `CHANGELOGP` | 変更ログ（トリガー `INVTRIGGER`） | `O2C_LOGID_SEQ` |
+| `CHANGELOGP` | 変更ログ（トリガー `INVTRIGGER`。コミットメント制御下の在庫更新は同じトランザクションで記録し、取り消されたらログも残らない） | `O2C_LOGID_SEQ` |
 | `DUNNINGP` | 督促履歴 | `O2C_DUNID_SEQ` |
 | `STKMOVEP` | 在庫移動履歴 | `O2C_MOVID_SEQ` |
 | `CUSTCLSP` | 顧客締日 | |
@@ -176,7 +176,7 @@ F3 でメニューを終了します。
 
 為替レート（`FXRATEP`）が 1 件もない外貨の請求書は、年齢表・督促の一覧で 0 円として集計し、件数を画面に表示します。
 
-番号の形式: 受注 `SO-…`、出荷 `SHP-n`、請求 `INV-n`、入金 `PAY-n`。
+番号の形式: 受注 `SO-YYYYMMDD-nnnnnn`（登録日と連番。受注入力で作った受注）、出荷 `SHP-n`、請求 `INV-n`、入金 `PAY-n`。
 シーケンスはキャッシュするため、番号が飛ぶことがあります（例 `PAY-1` の次が `PAY-21`）。
 
 ## 新しい環境へのセットアップ

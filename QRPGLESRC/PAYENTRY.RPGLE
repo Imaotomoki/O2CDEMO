@@ -338,7 +338,7 @@
      C+    WHERE CODETYPE = 'PAY_METHOD' AND CODEVAL = :PAYMETH
      C+      AND ISACTIVE = 'Y'
      C/END-EXEC
-     C                   IF        W#CDCNT = 0
+     C                   IF        SQLCODE <> 0 OR W#CDCNT = 0
      C                   EVAL      *IN33 = *ON
      C                   EVAL      W#ERROR = *ON
      C                   EVAL      ERRMSG = '入金方法が登録されていません' +
@@ -362,7 +362,7 @@
      C+    WHERE CODETYPE = 'CURRENCY' AND CODEVAL = :CURRCD
      C+      AND ISACTIVE = 'Y'
      C/END-EXEC
-     C                   IF        W#CDCNT = 0
+     C                   IF        SQLCODE <> 0 OR W#CDCNT = 0
      C                   EVAL      *IN34 = *ON
      C                   EVAL      W#ERROR = *ON
      C                   EVAL      ERRMSG = '通貨が登録されていません' +
@@ -927,7 +927,12 @@
      C                   IF        W#CURRCD = W#BASECUR
      C                   RETURN    %TRIM(%EDITC(%DECH(pAmt:12:0):'1'))
      C                   ENDIF
+      * 修正#OVF 桁に収まらない金額・数量は*で表示(異常終了していた)
+     C                   MONITOR
      C                   EVAL      W#AMTED = %TRIM(%EDITC(%DEC(pAmt:11:2):'1'))
+     C                   ON-ERROR
+     C                   EVAL      W#AMTED = *ALL'*'
+     C                   ENDMON
       * 0は '.00' になるので '0.00' にする
      C                   IF        %SUBST(W#AMTED:1:1) = '.'
      C                   EVAL      W#AMTED = '0' + W#AMTED

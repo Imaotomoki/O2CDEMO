@@ -211,9 +211,18 @@
      C                   ENDIF
       * 修正#PRC: 円は小数なし、外貨は小数2桁
      C                   IF        CURRCD = 'JPY' OR CURRCD = *BLANKS
+      * 修正#OVF 桁に収まらない金額・数量は*で表示(異常終了していた)
+     C                   MONITOR
      C                   EVALR     LTOTAMT = %EDITC(%DECH(TOTAMT:11:0):'1')
+     C                   ON-ERROR
+     C                   EVAL      LTOTAMT = *ALL'*'
+     C                   ENDMON
      C                   ELSE
+     C                   MONITOR
      C                   EVALR     LTOTAMT = %EDITC(%DECH(TOTAMT:11:2):'1')
+     C                   ON-ERROR
+     C                   EVAL      LTOTAMT = *ALL'*'
+     C                   ENDMON
      C                   ENDIF
      C                   EVAL      W#CDVAL = STATUS
      C                   EXSR      @STATNM
@@ -321,9 +330,17 @@
      C                   EXSR      @STATNM
      C                   EVAL      DSTAT = W#CDVAL
      C                   IF        CURRCD = 'JPY' OR CURRCD = *BLANKS
+     C                   MONITOR
      C                   EVALR     DTOTAMT = %EDITC(%DECH(TOTAMT:13:0):'1')
+     C                   ON-ERROR
+     C                   EVAL      DTOTAMT = *ALL'*'
+     C                   ENDMON
      C                   ELSE
+     C                   MONITOR
      C                   EVALR     DTOTAMT = %EDITC(%DECH(TOTAMT:13:2):'1')
+     C                   ON-ERROR
+     C                   EVAL      DTOTAMT = *ALL'*'
+     C                   ENDMON
      C                   ENDIF
      C                   EVAL      DCUR = CURRCD
      C                   EVAL      W#WHID = WHID
@@ -354,14 +371,30 @@
      C                   EVAL      DOLDP = L_UNITPRC
      C                   EVAL(H)   DSHP = L_SHPQTY
      C                   IF        CURRCD = 'JPY' OR CURRCD = *BLANKS
+     C                   MONITOR
      C                   EVALR     DPRC = %EDITC(%DECH(L_UNITPRC:9:0):'1')
+     C                   ON-ERROR
+     C                   EVAL      DPRC = *ALL'*'
+     C                   ENDMON
      C                   ELSE
+     C                   MONITOR
      C                   EVALR     DPRC = %EDITC(%DECH(L_UNITPRC:8:2):'1')
+     C                   ON-ERROR
+     C                   EVAL      DPRC = *ALL'*'
+     C                   ENDMON
      C                   ENDIF
      C                   IF        CURRCD = 'JPY' OR CURRCD = *BLANKS
+     C                   MONITOR
      C                   EVALR     DAMT = %EDITC(%DECH(L_LINEAMT:11:0):'1')
+     C                   ON-ERROR
+     C                   EVAL      DAMT = *ALL'*'
+     C                   ENDMON
      C                   ELSE
+     C                   MONITOR
      C                   EVALR     DAMT = %EDITC(%DECH(L_LINEAMT:11:2):'1')
+     C                   ON-ERROR
+     C                   EVAL      DAMT = *ALL'*'
+     C                   ENDMON
      C                   ENDIF
      C                   EVAL      *IN85 = *OFF
      C                   WRITE     DTLSFL
@@ -446,6 +479,15 @@
      C                   IF        DORD < L_SHPQTY
      C                   EVAL      W#ERR = *ON
      C                   EVAL      DMSG = '出荷済数量が変わりました。' +
+     C                             'F12で戻ってやり直してください'
+     C                   LEAVE
+     C                   ENDIF
+      * 修正#CONC 画面表示後に他で取消・数量変更された場合(表示時の
+      *   数量との差で引当を増減するため、引当がずれていた)
+     C                   IF        L_STATUS = 'CANCELLED' OR
+     C                             %DECH(L_ORDQTY:9:0) <> DOLDQ
+     C                   EVAL      W#ERR = *ON
+     C                   EVAL      DMSG = '他で変更されました。' +
      C                             'F12で戻ってやり直してください'
      C                   LEAVE
      C                   ENDIF

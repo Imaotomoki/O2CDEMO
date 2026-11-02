@@ -59,6 +59,9 @@
      D WTIME6          S              6S 0
 
      D W#SOID          S             18P 0
+      * 修正#SEQ 受注IDの連番
+     D W#SEQ           S             20I 0
+     D W#SEQ6          S              6S 0
      D W#LINENO        S              9P 0
      D W#IDX           S             10I 0
      D W#ERROR         S               N
@@ -109,6 +112,7 @@
      D W#SFLEOF        S               N
      D W#SFLRRN        S              4S 0
      D W#ITEMSEL       S               N
+     D W#F6RD          S               N
      D W#ITEMNM        S             22A
      D W#UNITPRC       S             15P 4
       * 修正#F12: 確認->F12 再入フラグ (ON=SFL再描画のみ)
@@ -421,7 +425,7 @@
      C+    WHERE CODETYPE = 'CURRENCY' AND CODEVAL = :CURRCD
      C+      AND ISACTIVE = 'Y'
      C/END-EXEC
-     C                   IF        W#CDCNT = 0
+     C                   IF        SQLCODE <> 0 OR W#CDCNT = 0
      C                   EVAL      *IN34 = *ON
      C                   EVAL      W#ERROR = *ON
      C                   EVAL      ERRMSG = '通貨が登録されていません' +
@@ -433,7 +437,7 @@
      C+    WHERE CODETYPE = 'PAYMENT_TERM' AND CODEVAL = :PAYTERM
      C+      AND ISACTIVE = 'Y'
      C/END-EXEC
-     C                   IF        W#CDCNT = 0
+     C                   IF        SQLCODE <> 0 OR W#CDCNT = 0
      C                   EVAL      *IN36 = *ON
      C                   EVAL      W#ERROR = *ON
      C                   EVAL      ERRMSG = '支払条件が登録されていません' +
@@ -537,7 +541,12 @@
      C                   EVAL      TOTAMT_D = W#TOTAMT
       * 修正#CUR: 外貨は小数2桁と通貨コードで表示
      C                   EVAL      *IN46 = (CURRCD <> 'JPY')
+      * 修正#OVF 桁に収まらない金額・数量は*で表示(異常終了していた)
+     C                   MONITOR
      C                   EVALR     TOTAMT_DF = %EDITC(%DEC(W#TOTAMT:13:2):'1')
+     C                   ON-ERROR
+     C                   EVAL      TOTAMT_DF = *ALL'*'
+     C                   ENDMON
      C                   EVAL      CUR_T = CURRCD
 
      C                   EVAL      *IN91 = *ON
@@ -590,7 +599,16 @@
      C                   ITER
      C                   ENDIF
 
+      * 修正#F6 F6(CF06)でも入力中の明細を先に確定する(CA06では入力が
+      *   返らず、入力中の行や数量の変更が捨てられていた)
+      *   変更された行があればEnterと同じ処理をして、F6は押し直し
+     C                   EVAL      W#F6RD = *OFF
      C                   IF        *IN06
+     C                   READC     DETAIL                                 99
+     C                   IF        NOT *IN99
+     C                   EVAL      *IN06 = *OFF
+     C                   EVAL      W#F6RD = *ON
+     C                   ELSE
      C                   IF        W#LINE_COUNT = 0
      C                   EVAL      ERRMSG = '商品を1件以上入力してください'
      C                   EVAL      *IN06 = *OFF
@@ -602,8 +620,11 @@
      C                   ENDIF
      C                   ITER
      C                   ENDIF
+     C                   ENDIF
 
+     C                   IF        NOT W#F6RD
      C                   READC     DETAIL                                 99
+     C                   ENDIF
 
      C                   IF        *IN99
      C                   ITER
@@ -842,7 +863,11 @@
      C                   EVAL      WHNM_C = WHNM
      C                   EVAL      TOTAMT = W#TOTAMT
      C                   EVAL      *IN46 = (CURRCD <> 'JPY')
+     C                   MONITOR
      C                   EVALR     TOTAMT_F = %EDITC(%DEC(W#TOTAMT:13:2):'1')
+     C                   ON-ERROR
+     C                   EVAL      TOTAMT_F = *ALL'*'
+     C                   ENDMON
      C                   EVAL      CUR_T = CURRCD
 
      C                   EVAL      *IN91 = *ON
@@ -856,10 +881,27 @@
      C* @SAVEORD - 受注保存
      C*===============================================================
      C     @SAVEORD      BEGSR
+      * 修正#ERRF 明細入力のエラー(削除した行の分)が残っていると、
+      *   メッセージなしで登録できなかった
+     C                   EVAL      W#ERROR = *OFF
 
       * 修正#K: 採番時刻を登録時点で取り直す(ヘッダ入力開始時刻では古い)
      C                   TIME                    WTIME6
-     C                   EVAL      W#SOID = (WDATE8 * 1000000) + WTIME6
+      * 修正#SEQ 受注IDはシーケンス(O2C_SOID_SEQ)で採番する(時刻からの
+      *   採番は同じ秒の登録で重複していた)。ID=日付*1000000+連番の
+      *   下6桁(新しい順の並びを保つ)。日付は登録した日にする
+      *   (日をまたいで入力すると前日の日付になっていた)
+     C                   EVAL      WDATE8 = %DEC(%DATE():*ISO)
+     C/EXEC SQL
+     C+   VALUES NEXT VALUE FOR O2C_SOID_SEQ INTO :W#SEQ
+     C/END-EXEC
+     C                   IF        SQLCODE <> 0
+     C                   EVAL      ERRMSG = '受注番号の採番に失敗しました'
+     C                   EVAL      W#ERROR = *ON
+     C                   LEAVESR
+     C                   ENDIF
+     C                   EVAL      W#SEQ6 = %REM(W#SEQ:1000000)
+     C                   EVAL      W#SOID = (WDATE8 * 1000000) + W#SEQ6
      C                   EVAL      W#ORDDATE = ORDDATE
      C                   EVAL      W#REQDATE = REQDATE
      C                   EVAL      W#CURRCD = CURRCD
@@ -870,7 +912,7 @@
      C                   EVAL      SO_SOID = W#SOID
       * 修正#19: WDATE8はYYYYMMDD(8桁)になったので受注番号は正しい形式
      C                   EVAL      SO_SONUM = 'SO-' + %CHAR(WDATE8) + '-' +
-     C                             %EDITC(WTIME6:'X')
+     C                             %EDITC(W#SEQ6:'X')
      C                   EVAL      SO_CUSTID = W#CUSTID
      C                   EVAL      SO_ORDDATE = %INT(W#ORDDATE)
      C                   EVAL      SO_REQDATE = %INT(W#REQDATE)

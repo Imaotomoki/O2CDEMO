@@ -121,9 +121,18 @@
      D   pAmt                        15P 2 CONST
      D wOut            S             15A
      C                   IF        W#CUR = 'JPY' OR W#CUR = *BLANKS
+      * 修正#OVF 桁に収まらない金額・数量は*で表示(異常終了していた)
+     C                   MONITOR
      C                   EVALR     wOut = %EDITC(%DECH(pAmt:11:0):'J')
+     C                   ON-ERROR
+     C                   EVAL      wOut = *ALL'*'
+     C                   ENDMON
      C                   ELSE
+     C                   MONITOR
      C                   EVALR     wOut = %EDITC(%DECH(pAmt:11:2):'J')
+     C                   ON-ERROR
+     C                   EVAL      wOut = *ALL'*'
+     C                   ENDMON
      C                   ENDIF
      C                   RETURN    wOut
      P FmtAmt          E

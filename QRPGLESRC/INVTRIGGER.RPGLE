@@ -1,4 +1,5 @@
      H DATEDIT(*YMD) DECEDIT('0.') COPYRIGHT('DEMOAPP')
+     H DFTACTGRP(*NO) ACTGRP(*CALLER)
       * プログラム名: INVTRIGGER
       * 説明: 在庫更新トリガープログラム(INVENTORYP)
       * ライブラリ: DEMOAPP
@@ -15,7 +16,16 @@
       *            WRITE(E)でログ失敗時も在庫更新は失敗させない
       *   修正#NODSP 在庫マイナス警告のDSPLYを廃止しログ(ALERT)に記録
       *            (バッチで更新すると応答待ちで止まるため)
-     FCHANGELOGPO    E             DISK
+      *   修正#TCMT 変更ログをコミットメント制御に含める
+      *            在庫の更新がコミット制御下(TH_CMTLCK<>0)なら、ログも
+      *            同じトランザクションで書く(ROLLBACKでログも消える)
+      *            呼び出し元の活動化グループで動かす(ACTGRP(*CALLER))
+      *            開けないときは従来どおりコミット制御なしで書く
+     FCHANGELOGPO    E             DISK    USROPN
+     FCHGLOGC   O    E             DISK    COMMIT USROPN
+     F                                     EXTDESC('CHANGELOGP')
+     F                                     EXTFILE(*EXTDESC)
+     F                                     RENAME(LOGREC:LOGRECC)
      D TRGBUF          S          32767A
      D TRGBUFLEN       S             10I 0
      D pTRGBUF         S               *
@@ -65,6 +75,8 @@
       * 修正#LOGID: ログの操作区分
      D W#ACTION        S             10A
      D W#NEWVAL        S           1024A
+      * 修正#TCMT ログをコミット制御で開いた
+     D W#CMTOPN        S               N
       * 修正#LOGID: どのジョブ(ライブラリーリスト)から呼ばれても
       *            シーケンスを解決できるようSQL命名で修飾する
      C/EXEC SQL
@@ -80,6 +92,16 @@
      C                   EXSR      @CHKCONS
      C                   EXSR      @END
      C     @INZ          BEGSR
+      * 修正#TCMT コミット制御下の更新ならログもコミット制御で開く
+     C                   EVAL      W#CMTOPN = *OFF
+     C                   EVAL      pTRGBUF = %ADDR(TRGBUF)
+     C                   IF        TH_CMTLCK <> '0'
+     C                   OPEN(E)   CHGLOGC
+     C                   EVAL      W#CMTOPN = NOT %ERROR
+     C                   ENDIF
+     C                   IF        NOT W#CMTOPN
+     C                   OPEN(E)   CHANGELOGP
+     C                   ENDIF
      C                   TIME                    WTIMESTAMP
      C                   EVAL      W#CNTR = *ZERO
      C                   EVAL      pTRGBUF = %ADDR(TRGBUF)
@@ -179,7 +201,11 @@
      C                   EVAL      CHGAT = WTIMESTAMP
      C                   EVAL      OLDVAL = W#OLDVAL
      C                   EVAL      NEWVAL = W#NEWVAL
+     C                   IF        W#CMTOPN
+     C                   WRITE(E)  LOGRECC
+     C                   ELSEIF    %OPEN(CHANGELOGP)
      C                   WRITE(E)  LOGREC
+     C                   ENDIF
      C                   ENDSR
      C     @END          BEGSR
      C                   EVAL      *INLR = *ON
