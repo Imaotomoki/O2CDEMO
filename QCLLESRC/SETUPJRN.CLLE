@@ -141,6 +141,42 @@
                           IMAGES(*BOTH) OMTJRNE(*OPNCLO)
              MONMSG     MSGID(CPF7030)
 
+/* 修正#NEW: 追加機能のファイル */
+             STRJRNPF   FILE(&LIB/RETURNP) +
+                          JRN(&LIB/O2CJRN) +
+                          IMAGES(*BOTH) OMTJRNE(*OPNCLO)
+             MONMSG     MSGID(CPF7030)
+
+             STRJRNPF   FILE(&LIB/PRICEP) +
+                          JRN(&LIB/O2CJRN) +
+                          IMAGES(*BOTH) OMTJRNE(*OPNCLO)
+             MONMSG     MSGID(CPF7030)
+
+             STRJRNPF   FILE(&LIB/QUOTEHP) +
+                          JRN(&LIB/O2CJRN) +
+                          IMAGES(*BOTH) OMTJRNE(*OPNCLO)
+             MONMSG     MSGID(CPF7030)
+
+             STRJRNPF   FILE(&LIB/QUOTELP) +
+                          JRN(&LIB/O2CJRN) +
+                          IMAGES(*BOTH) OMTJRNE(*OPNCLO)
+             MONMSG     MSGID(CPF7030)
+
+             STRJRNPF   FILE(&LIB/BANKINP) +
+                          JRN(&LIB/O2CJRN) +
+                          IMAGES(*BOTH) OMTJRNE(*OPNCLO)
+             MONMSG     MSGID(CPF7030)
+
+             STRJRNPF   FILE(&LIB/POHDRP) +
+                          JRN(&LIB/O2CJRN) +
+                          IMAGES(*BOTH) OMTJRNE(*OPNCLO)
+             MONMSG     MSGID(CPF7030)
+
+             STRJRNPF   FILE(&LIB/POLINEP) +
+                          JRN(&LIB/O2CJRN) +
+                          IMAGES(*BOTH) OMTJRNE(*OPNCLO)
+             MONMSG     MSGID(CPF7030)
+
              SNDPGMMSG  MSG('コミットメント制御を開始中...') +
                           TOPGMQ(*EXT) MSGTYPE(*INFO)
 

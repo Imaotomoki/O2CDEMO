@@ -1,0 +1,26 @@
+      *===============================================================
+      * 物理ファイル: POHDRP (発注ヘッダ)
+      * 修正#PO: 新規作成。POENTRY で発注・入荷する
+      *   状態: OPEN=発注済 PARTIAL=一部入荷 RECEIVED=入荷済
+      *         CANCELLED=取消
+      *   仕入先はコードマスター SUPPLIER のコード
+      *   採番: O2C_POID_SEQ。発注番号は PO-発注ID
+      *===============================================================
+     A                                      UNIQUE
+     A          R POHREC
+     A                                      TEXT('発注ヘッダ')
+     A            POID          18P 0       COLHDG('発注ID')
+     A            PONUM         20A         COLHDG('発注番号')
+     A            SUPPCD        20A         COLHDG('仕入先')
+     A            PODATE         8P 0       COLHDG('発注日')
+     A            DUEDATE        8P 0       COLHDG('入荷予定日')
+     A            WHID           4P 0       COLHDG('入荷倉庫')
+     A            STATUS        12A         COLHDG('状態')
+     A            TOTAMT        15P 2       COLHDG('合計(税抜)')
+     A            CRTUSER       30O         COLHDG('作成者')
+     A            CRTDATE        8P 0       COLHDG('作成日')
+     A            CRTTIM         6P 0       COLHDG('作成時刻')
+     A            UPDUSER       30O         COLHDG('更新者')
+     A            UPDDATE        8P 0       COLHDG('更新日')
+     A            UPDTIM         6P 0       COLHDG('更新時刻')
+     A          K POID

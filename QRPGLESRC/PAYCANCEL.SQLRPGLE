@@ -238,6 +238,12 @@
      C                   EVAL      W#ERR = *ON
      C                   LEAVESR
      C                   ENDIF
+      * 修正#RET 赤伝の相殺(区分 CREDITNOTE)は入金取消の対象外
+     C                   IF        S#METH = 'CREDITNOTE'
+     C                   EVAL      W#MSG = '赤伝の相殺は取り消せません'
+     C                   EVAL      W#ERR = *ON
+     C                   LEAVESR
+     C                   ENDIF
      C                   EXSR      @CHKCLS
      C                   IF        W#ERR
      C                   LEAVESR

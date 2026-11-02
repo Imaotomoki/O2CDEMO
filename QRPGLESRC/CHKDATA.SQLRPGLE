@@ -12,6 +12,7 @@
       *    7 在庫:有効在庫の計算
       *    8 在庫:引当済と受注残
       *    9 入金:入金額と消込合計
+      *      修正#BNK 前受金(UNAPPLIED)は消込合計が入金額以下ならよい
       *   10 受注:合計と明細合計
       *   値=いまの値、あるべき値=ほかのファイルから計算した値
       *=====================================================================
@@ -93,8 +94,11 @@
      C+          CHAR(COALESCE(SUM(A.APPLYAMT), 0))
      C+     FROM PAYMENTP P LEFT JOIN PAYAPPLYP A ON A.PAYID = P.PAYID
      C+    WHERE P.STATUS <> 'CANCELLED'
-     C+    GROUP BY P.PAYNUM, P.AMOUNT
-     C+   HAVING P.AMOUNT <> COALESCE(SUM(A.APPLYAMT), 0)
+     C+    GROUP BY P.PAYNUM, P.AMOUNT, P.STATUS
+     C+   HAVING (P.STATUS <> 'UNAPPLIED' AND
+     C+           P.AMOUNT <> COALESCE(SUM(A.APPLYAMT), 0))
+     C+       OR COALESCE(SUM(A.APPLYAMT), 0) > P.AMOUNT
+     C+       OR COALESCE(SUM(A.APPLYAMT), 0) < 0
      C+   UNION ALL
      C+   SELECT 10, H.SONUM, CHAR(H.TOTAMT), CHAR(SUM(L.LINEAMT))
      C+     FROM SORDERHP H JOIN SORDERLP L ON L.SOID = H.SOID

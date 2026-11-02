@@ -1,0 +1,139 @@
+     A* ==========================================================
+     A* QUOTENTD - 見積入力・受注への変換の画面
+     A* 修正#QT: 新規作成。QUOTENT から使う
+     A*   全角の定数の直後は1桁空けて項目を置く(SIと属性桁の重なり防止)
+     A* ==========================================================
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      CA03(03 'F3=終了')
+     A                                      CF04(04 'F4=検索')
+     A                                      CF06(06 'F6=新規・保存')
+     A                                      CA12(12 'F12=戻る')
+     A                                      PRINT
+     A* ---- LSFL - 見積の一覧 ----
+     A          R LSFL                      SFL
+     A            LOPT           1A  B  7  2DSPATR(UL)
+     A                                      VALUES(' ' '1' '2' '4' '5')
+     A            LQTNUM        10A  O  7  4COLOR(GRN)
+     A            LCUST         12A  O  7 15
+     A            LQDATE        10A  O  7 28
+     A            LVALID        10A  O  7 39
+     A            LAMT          14A  O  7 50
+     A            LSTS          12A  O  7 66
+     A  61                                  COLOR(RED)
+     A            LID           18S 0H
+     A          R LCTL                      SFLCTL(LSFL)
+     A                                      SFLSIZ(0999)
+     A                                      SFLPAG(0014)
+     A  91                                  SFLDSP
+     A  92                                  SFLDSPCTL
+     A  93                                  SFLCLR
+     A  94                                  SFLEND(*MORE)
+     A                                      OVERLAY
+     A                                  1  2'見積入力・受注への変換'
+     A                                      DSPATR(HI)
+     A                                  1 70DATE(*SYS) EDTCDE(Y)
+     A                                  3  2'表示する見積'
+     A            LFSTS          1A  B  3 17DSPATR(UL)
+     A                                      VALUES(' ' 'O')
+     A                                  3 20'(空白=全部 O=未受注のみ)'
+     A                                      COLOR(BLU)
+     A                                  4  2'1=受注へ変換 2=変更 4=取消'
+     A                                      COLOR(BLU)
+     A                                  4 36'5=表示'
+     A                                      COLOR(BLU)
+     A                                  6  4'見積番号'
+     A                                  6 15'顧客'
+     A                                  6 28'見積日'
+     A                                  6 39'有効期限'
+     A                                  6 51'合計(税抜)'
+     A                                  6 66'状態'
+     A* ---- LFOOT ----
+     A          R LFOOT
+     A            LMSG          78A  O 22  2COLOR(RED)
+     A                                 23  2'F3=終了 F6=新規'
+     A                                      COLOR(BLU)
+     A* ---- DSFL - 見積の明細 ----
+     A          R DSFL                      SFL
+     A            SNO            2S 0O  9  2
+     A            SITEM         12A  B  9  5
+     A N50                                  DSPATR(UL)
+     A  50                                  DSPATR(PR)
+     A  41                                  DSPATR(RI PC)
+     A            SINAME        20A  O  9 18COLOR(TRQ)
+     A            SQTY           9Y 0B  9 39EDTCDE(Z)
+     A N50                                  DSPATR(UL)
+     A  50                                  DSPATR(PR)
+     A  42                                  DSPATR(RI PC)
+     A            SPRC          11Y 2B  9 49EDTCDE(2)
+     A N50                                  DSPATR(UL)
+     A  50                                  DSPATR(PR)
+     A  43                                  DSPATR(RI PC)
+     A            SAMT          14A  O  9 64
+     A* ---- DCTL - 見積のヘッダ ----
+     A          R DCTL                      SFLCTL(DSFL)
+     A                                      SFLSIZ(0010)
+     A                                      SFLPAG(0010)
+     A                                      SFLDSP
+     A                                      SFLDSPCTL
+     A  93                                  SFLCLR
+     A                                      OVERLAY
+     A                                      RTNCSRLOC(&CSRRCD &CSRFLD)
+     A                                      SFLCSRRRN(&CSRRRN)
+     A            CSRRCD        10A  H
+     A            CSRFLD        10A  H
+     A            CSRRRN         5S 0H
+     A            DMODE         20A  O  1  2DSPATR(HI)
+     A                                  1 70DATE(*SYS) EDTCDE(Y)
+     A                                  3  2'見積番号'
+     A            DQTNUM        20A  O  3 14COLOR(GRN)
+     A                                  3 40'見積日'
+     A            DQDATE         8Y 0B  3 52
+     A N50                                  DSPATR(UL)
+     A  50                                  DSPATR(PR)
+     A  32                                  DSPATR(RI PC)
+     A                                  4  2'顧客'
+     A            DCUST         20A  B  4 14
+     A N50                                  DSPATR(UL)
+     A  50                                  DSPATR(PR)
+     A  31                                  DSPATR(RI PC)
+     A            DCUSTNM       30A  O  4 36COLOR(TRQ)
+     A                                  5  2'倉庫ID'
+     A            DWHID          4Y 0B  5 14EDTCDE(Z)
+     A N50                                  DSPATR(UL)
+     A  50                                  DSPATR(PR)
+     A  34                                  DSPATR(RI PC)
+     A            DWHNM         16A  O  5 20COLOR(TRQ)
+     A                                  5 40'有効期限'
+     A            DVALID         8Y 0B  5 52
+     A N50                                  DSPATR(UL)
+     A  50                                  DSPATR(PR)
+     A  33                                  DSPATR(RI PC)
+     A                                  6  2'件名'
+     A            DNOTE         40O  B  6 14
+     A N50                                  DSPATR(UL)
+     A  50                                  DSPATR(PR)
+     A                                  7  2'状態'
+     A            DSTS          12A  O  7 14
+     A                                  7 40'受注番号'
+     A            DSONUM        20A  O  7 52COLOR(GRN)
+     A                                  8  2'No'
+     A                                  8  5'商品コード'
+     A                                  8 18'商品名'
+     A                                  8 43'数量'
+     A                                  8 58'単価'
+     A                                  8 66'金額(税抜)'
+     A* ---- DFOOT ----
+     A          R DFOOT
+     A                                 20  2'合計(税抜)'
+     A            DTOT          14A  O 20 17
+     A                                 20 33'消費税'
+     A            DTAX          14A  O 20 42
+     A                                 20 58'税込'
+     A            DGRAND        14A  O 20 65DSPATR(HI)
+     A            DMSG          78A  O 22  2COLOR(RED)
+     A N50                             23  2'Enter=計算 F6=保存 F4=検索'
+     A                                      COLOR(BLU)
+     A N50                             23 36'単価0=標準・顧客別単価'
+     A                                      COLOR(BLU)
+     A                                 23 66'F12=戻る'
+     A                                      COLOR(BLU)

@@ -1,0 +1,100 @@
+     A* ==========================================================
+     A* PAYIMPD - 入金データの取込・消込の画面
+     A* 修正#BNK: 新規作成。PAYIMP から使う
+     A*   全角の定数の直後は1桁空けて項目を置く(SIと属性桁の重なり防止)
+     A* ==========================================================
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      CA03(03 'F3=終了')
+     A                                      CF04(04 'F4=検索')
+     A                                      CF05(05 'F5=再推定')
+     A                                      CF06(06 'F6=取込')
+     A                                      CF08(08 'F8=前受金充当')
+     A                                      CF10(10 'F10=一括登録')
+     A                                      CA12(12 'F12=戻る')
+     A                                      PRINT
+     A* ---- LSFL - 取り込んだ入金データ ----
+     A          R LSFL                      SFL
+     A            LOPT           1A  B  8  2DSPATR(UL)
+     A                                      VALUES(' ' '1' '2' '4')
+     A            LPDATE        10A  O  8  4
+     A            LAMT          12A  O  8 15
+     A            LPAYER        20A  O  8 28COLOR(TRQ)
+     A            LCUST         12A  O  8 49
+     A            LTYPE          8A  O  8 62
+     A            LSTS           8A  O  8 71
+     A  61                                  COLOR(RED)
+     A            LID           18S 0H
+     A          R LCTL                      SFLCTL(LSFL)
+     A                                      SFLSIZ(0999)
+     A                                      SFLPAG(0013)
+     A  91                                  SFLDSP
+     A  92                                  SFLDSPCTL
+     A  93                                  SFLCLR
+     A  94                                  SFLEND(*MORE)
+     A                                      OVERLAY
+     A                                  1  2'入金データの取込・消込'
+     A                                      DSPATR(HI)
+     A                                  1 70DATE(*SYS) EDTCDE(Y)
+     A                                  3  2'取込ファイル'
+     A            LPATH         60A  B  3 17DSPATR(UL)
+     A                                      CHECK(LC)
+     A                                  4  2'(CSV: 入金日,金額,依頼人)'
+     A                                      COLOR(BLU)
+     A                                  4 42'表示'
+     A            LFSTS          1A  B  4 49DSPATR(UL)
+     A                                      VALUES(' ' 'A')
+     A                                  4 52'(空白=未処理 A=全部)'
+     A                                      COLOR(BLU)
+     A                                  5  2'1=登録 2=顧客指定 4=対象外'
+     A                                      COLOR(BLU)
+     A                                  5 38'前受金(未充当)'
+     A            LADV          14A  O  5 58DSPATR(HI)
+     A                                  7  4'入金日'
+     A                                  7 19'金額'
+     A                                  7 28'振込依頼人'
+     A                                  7 49'顧客'
+     A                                  7 62'推定'
+     A                                  7 71'状態'
+     A* ---- LFOOT ----
+     A          R LFOOT
+     A            LMSG          78A  O 22  2COLOR(RED)
+     A                                 23  2'F6=取込 F5=再推定 F10=一括'
+     A                                      COLOR(BLU)
+     A                                 23 40'F8=前受金充当'
+     A                                      COLOR(BLU)
+     A                                 23 64'F3=終了'
+     A                                      COLOR(BLU)
+     A* ---- ASGN - 顧客の指定 ----
+     A          R ASGN
+     A                                      RTNCSRLOC(&CSRRCD &CSRFLD)
+     A            CSRRCD        10A  H
+     A            CSRFLD        10A  H
+     A                                  1  2'入金データの顧客の指定'
+     A                                      DSPATR(HI)
+     A                                  1 70DATE(*SYS) EDTCDE(Y)
+     A                                  3  2'入金日'
+     A            APDATE        10A  O  3 16
+     A                                  4  2'金額'
+     A            AAMT          14A  O  4 16
+     A                                  5  2'振込依頼人'
+     A            APAYER        48A  O  5 16COLOR(TRQ)
+     A                                  7  2'顧客コード'
+     A            ACUST         20A  B  7 16DSPATR(UL)
+     A  31                                  DSPATR(RI PC)
+     A            ACUSTNM       40A  O  8 16COLOR(TRQ)
+     A                                  9  2'請求番号'
+     A            AINVNUM       20A  B  9 16DSPATR(UL)
+     A                                      CHECK(LC)
+     A  32                                  DSPATR(RI PC)
+     A                                  9 38'(空白=古い請求書から)'
+     A                                      COLOR(BLU)
+     A                                 11  2'顧客のカナ名を登録'
+     A            AKANA          1A  B 11 23DSPATR(UL)
+     A                                      VALUES(' ' 'Y')
+     A                                 11 26'(Y=振込依頼人を顧客のカナ名に'
+     A                                      COLOR(BLU)
+     A                                 12 26'して次回から推定)'
+     A                                      COLOR(BLU)
+     A            AMSG          78A  O 22  2COLOR(RED)
+     A                                 23  2'Enter=決定 F4=検索 F12=戻る'
+     A                                      COLOR(BLU)

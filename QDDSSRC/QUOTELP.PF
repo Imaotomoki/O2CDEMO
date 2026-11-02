@@ -1,0 +1,16 @@
+      *===============================================================
+      * 物理ファイル: QUOTELP (見積明細)
+      * 修正#QT: 新規作成。金額は税抜、税率は明細ごと
+      *===============================================================
+     A                                      UNIQUE
+     A          R QTLREC
+     A                                      TEXT('見積明細')
+     A            QTID          18P 0       COLHDG('見積ID')
+     A            LINENO         9P 0       COLHDG('行番号')
+     A            ITEMID         9P 0       COLHDG('商品ID')
+     A            QTQTY         15P 3       COLHDG('数量')
+     A            UNITPRC       15P 4       COLHDG('単価')
+     A            TAXRATE        5P 3       COLHDG('税率')
+     A            LINEAMT       15P 2       COLHDG('金額(税抜)')
+     A          K QTID
+     A          K LINENO

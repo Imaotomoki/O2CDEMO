@@ -11,6 +11,7 @@
 /*     RPGLE   : CRTBNDRPG                                          */
 /*     CLLE    : CRTBNDCL                                           */
 /*   1本失敗しても残りは続け、最後に件数を報告する                  */
+/* 修正#NEW: 追加機能(マスター保守・見積・入金データ・発注など)を追加 */
 /*   (失敗があればエスケープ・メッセージで終了)                    */
 /*   使用中の画面ファイルは作り直せないので、業務画面を閉じて実行   */
 /* 修正#INQ: 請求書照会(INVINQD/INVINQ)を追加                      */
@@ -85,6 +86,39 @@
              CALLSUBR   SUBR(COMPILE)
              CHGVAR     VAR(&OBJ) VALUE('SHPDUED')
              CALLSUBR   SUBR(COMPILE)
+/* 修正#NEW: 追加機能の画面 */
+             CHGVAR     VAR(&OBJ) VALUE('CUSTMNTD')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('ITEMMNTD')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('WHMNTD')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('FXMNTD')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('CODEMNTD')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('PRICEMNTD')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('USERMNTD')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('CHGLOGD')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('MSTMNUD')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('QUOTENTD')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('RETENTD')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('PAYIMPD')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('POENTRYD')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('STKXFERD')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('MARGIND')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('GLEXPD')
+             CALLSUBR   SUBR(COMPILE)
 
              CHGVAR     VAR(&TYPE) VALUE('PRTF')
              CHGVAR     VAR(&OBJ) VALUE('INVPRTF')
@@ -94,6 +128,8 @@
              CHGVAR     VAR(&OBJ) VALUE('ARAGPRTF')
              CALLSUBR   SUBR(COMPILE)
              CHGVAR     VAR(&OBJ) VALUE('DUNPRTF')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('SHPPRTF')
              CALLSUBR   SUBR(COMPILE)
 
 /*-- 2. 埋め込みSQLのRPG ----------------------------------------------*/
@@ -138,6 +174,41 @@
              CALLSUBR   SUBR(COMPILE)
              CHGVAR     VAR(&OBJ) VALUE('DUNNING')
              CALLSUBR   SUBR(COMPILE)
+/* 修正#NEW: 追加機能のプログラム */
+             CHGVAR     VAR(&OBJ) VALUE('CUSTMNT')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('ITEMMNT')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('WHMNT')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('FXMNT')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('PRICEMNT')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('USERMNT')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('CHKAUTH')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('CHGLOGINQ')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('QUOTENT')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('RETENTRY')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('PAYIMP')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('POENTRY')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('STKXFER')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('MARGIN')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('GLEXPORT')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('SHPPRINT')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('NIGHTBAT')
+             CALLSUBR   SUBR(COMPILE)
 
 /*-- 3. RPG -----------------------------------------------------------*/
              CHGVAR     VAR(&TYPE) VALUE('RPGLE')
@@ -149,6 +220,8 @@
              CALLSUBR   SUBR(COMPILE)
              CHGVAR     VAR(&OBJ) VALUE('INVINQ')
              CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('CODEMNT')
+             CALLSUBR   SUBR(COMPILE)
 
 /*-- 4. CL ------------------------------------------------------------*/
              CHGVAR     VAR(&TYPE) VALUE('CLLE')
@@ -157,6 +230,10 @@
              CHGVAR     VAR(&OBJ) VALUE('CRTINVCL')
              CALLSUBR   SUBR(COMPILE)
              CHGVAR     VAR(&OBJ) VALUE('O2CMENU')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('MSTMENU')
+             CALLSUBR   SUBR(COMPILE)
+             CHGVAR     VAR(&OBJ) VALUE('NIGHTCL')
              CALLSUBR   SUBR(COMPILE)
 
 /*-- 5. トリガー設定 --------------------------------------------------*/

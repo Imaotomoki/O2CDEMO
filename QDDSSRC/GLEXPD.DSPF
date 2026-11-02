@@ -1,0 +1,60 @@
+     A* ==========================================================
+     A* GLEXPD - 会計仕訳データの出力の画面
+     A* 修正#GL: 新規作成。GLEXPORT から使う
+     A*   全角の定数の直後は1桁空けて項目を置く(SIと属性桁の重なり防止)
+     A* ==========================================================
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      CA03(03 'F3=終了')
+     A                                      CA12(12 'F12=戻る')
+     A                                      PRINT
+     A          R GL
+     A                                  1  2'会計仕訳データの出力(CSV)'
+     A                                      DSPATR(HI)
+     A                                  1 70DATE(*SYS) EDTCDE(Y)
+     A                                  3  2'対象期間'
+     A            DFROM          8Y 0B  3 14DSPATR(UL)
+     A  31                                  DSPATR(RI PC)
+     A                                  3 24'～'
+     A            DTO            8Y 0B  3 29DSPATR(UL)
+     A  32                                  DSPATR(RI PC)
+     A                                  3 39'(YYYYMMDD)'
+     A                                      COLOR(BLU)
+     A                                  4  2'出力先'
+     A            DPATH         50A  B  4 14DSPATR(UL)
+     A                                      CHECK(LC)
+     A  33                                  DSPATR(RI PC)
+     A                                  6  2'出力する仕訳'
+     A                                      COLOR(WHT)
+     A                                  7  4'売上(請求書・赤伝)'
+     A                                  7 30'借方 売掛金'
+     A                                  7 49'貸方 売上高・仮受消費税'
+     A                                  8  4'入金'
+     A                                  8 30'借方 現金預金'
+     A                                  8 49'貸方 売掛金'
+     A                                  9  4'取消済の請求書・入金と'
+     A                                      COLOR(BLU)
+     A                                  9 31'赤伝の相殺は出力しません'
+     A                                      COLOR(BLU)
+     A                                 10  4'外貨は請求日の為替レートで円換算'
+     A                                      COLOR(BLU)
+     A                                 10 41'(入金は入金時の円換算額)'
+     A                                      COLOR(BLU)
+     A                                 11  4'科目名はコードマスターの'
+     A                                      COLOR(BLU)
+     A                                 11 31'GL_ACCOUNT で変更できます'
+     A                                      COLOR(BLU)
+     A                                 12  6'AR=売掛金 SALES=売上高'
+     A                                      COLOR(BLU)
+     A                                 12 34'TAX=仮受消費税 CASH=現金預金'
+     A                                      COLOR(BLU)
+     A                                 14  2'売上の伝票'
+     A            DSCNT          7Y 0O 14 16EDTCDE(Z)
+     A                                 14 25'件'
+     A                                 15  2'入金の伝票'
+     A            DPCNT          7Y 0O 15 16EDTCDE(Z)
+     A                                 15 25'件'
+     A                                 16  2'ファイル'
+     A            DFILE         64A  O 16 14COLOR(TRQ)
+     A            DMSG          78A  O 22  2COLOR(RED)
+     A                                 23  2'Enter=出力  F3=終了'
+     A                                      COLOR(BLU)

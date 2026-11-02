@@ -14,6 +14,8 @@
 
              DCLF       FILE(O2CMNUD)
              DCL        VAR(&PGM) TYPE(*CHAR) LEN(10)
+/* 修正#AUT: メニューの権限(CHKAUTH の結果 Y/N)                    */
+             DCL        VAR(&AUTOK) TYPE(*CHAR) LEN(1)
 /* 修正#F4P: 共通の検索ウィンドウ(O2CPRMPT)のパラメーター           */
              DCL        VAR(&PTYPE) TYPE(*CHAR) LEN(10) VALUE('INV')
              DCL        VAR(&PCDTYPE) TYPE(*CHAR) LEN(30) VALUE(' ')
@@ -138,12 +140,41 @@
 /* 修正#DUE: 16=出荷予定                                          */
              IF         COND(&MOPT *EQ '16') +
                           THEN(CHGVAR VAR(&PGM) VALUE('SHPDUE'))
+/* 修正#MENU2: 17=マスター保守 18=見積 19=返品・値引き             */
+/*   20=入金データ取込 21=発注 22=倉庫間移動 23=粗利 24=仕訳出力   */
+             IF         COND(&MOPT *EQ '17') +
+                          THEN(CHGVAR VAR(&PGM) VALUE('MSTMENU'))
+             IF         COND(&MOPT *EQ '18') +
+                          THEN(CHGVAR VAR(&PGM) VALUE('QUOTENT'))
+             IF         COND(&MOPT *EQ '19') +
+                          THEN(CHGVAR VAR(&PGM) VALUE('RETENTRY'))
+             IF         COND(&MOPT *EQ '20') +
+                          THEN(CHGVAR VAR(&PGM) VALUE('PAYIMP'))
+             IF         COND(&MOPT *EQ '21') +
+                          THEN(CHGVAR VAR(&PGM) VALUE('POENTRY'))
+             IF         COND(&MOPT *EQ '22') +
+                          THEN(CHGVAR VAR(&PGM) VALUE('STKXFER'))
+             IF         COND(&MOPT *EQ '23') +
+                          THEN(CHGVAR VAR(&PGM) VALUE('MARGIN'))
+             IF         COND(&MOPT *EQ '24') +
+                          THEN(CHGVAR VAR(&PGM) VALUE('GLEXPORT'))
 
              IF         COND(&PGM *EQ ' ') THEN(DO)
              IF         COND(&MOPT *NE '  ') THEN(DO)
              CHGVAR     VAR(&IN40) VALUE('1')
-             CHGVAR     VAR(&MMSG) VALUE('1から16の番号を選んでください')
+             CHGVAR     VAR(&MMSG) VALUE('1から24の番号を選んでください')
              ENDDO
+             GOTO       CMDLBL(LOOP)
+             ENDDO
+
+/* 修正#AUT: 権限のない機能は呼ばない(CHKAUTH がなければ制限なし) */
+             CHGVAR     VAR(&AUTOK) VALUE('Y')
+             CALL       PGM(CHKAUTH) PARM(&PGM &AUTOK)
+             MONMSG     MSGID(CPF0000)
+             IF         COND(&AUTOK *EQ 'N') THEN(DO)
+             CHGVAR     VAR(&IN40) VALUE('1')
+             CHGVAR     VAR(&MMSG) VALUE('この機能を使う権限がありません')
+             CHGVAR     VAR(&MOPT) VALUE(' ')
              GOTO       CMDLBL(LOOP)
              ENDDO
 

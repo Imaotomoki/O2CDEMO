@@ -1,0 +1,59 @@
+     A* ==========================================================
+     A* MARGIND - 粗利分析の画面
+     A* 修正#MRG: 新規作成。MARGIN から使う
+     A*   全角の定数の直後は1桁空けて項目を置く(SIと属性桁の重なり防止)
+     A* ==========================================================
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      CA03(03 'F3=終了')
+     A                                      CA12(12 'F12=戻る')
+     A                                      PRINT
+     A          R LSFL                      SFL
+     A            LCODE         12A  O  8  2COLOR(GRN)
+     A            LNAME         20A  O  8 15
+     A            LSALES        12A  O  8 36
+     A            LCOST         12A  O  8 49
+     A            LMRG          12A  O  8 62
+     A  61                                  COLOR(RED)
+     A            LRATE          6A  O  8 75
+     A  61                                  COLOR(RED)
+     A          R LCTL                      SFLCTL(LSFL)
+     A                                      SFLSIZ(0999)
+     A                                      SFLPAG(0012)
+     A  91                                  SFLDSP
+     A                                      SFLDSPCTL
+     A  93                                  SFLCLR
+     A  94                                  SFLEND(*MORE)
+     A                                      OVERLAY
+     A                                  1  2'粗利分析(顧客・商品別)'
+     A                                      DSPATR(HI)
+     A                                  1 70DATE(*SYS) EDTCDE(Y)
+     A                                  3  2'期間(請求日)'
+     A            LFROM          8Y 0B  3 19DSPATR(UL)
+     A  31                                  DSPATR(RI PC)
+     A                                  3 29'～'
+     A            LTO            8Y 0B  3 34DSPATR(UL)
+     A  32                                  DSPATR(RI PC)
+     A                                  4  2'集計の単位'
+     A            LKIND          1A  B  4 17DSPATR(UL)
+     A                                      VALUES('C' 'I')
+     A                                  4 20'(C=顧客別 I=商品別)'
+     A                                      COLOR(BLU)
+     A                                  5  2'売上は請求明細(税抜・円換算)'
+     A                                      COLOR(BLU)
+     A                                  5 37'原価は数量×商品の標準原価'
+     A                                      COLOR(BLU)
+     A            LH1           10A  O  7  2
+     A                                  7 15'名前'
+     A                                  7 44'売上'
+     A                                  7 57'原価'
+     A                                  7 68'粗利'
+     A                                  7 76'率%'
+     A          R LFOOT
+     A                                 21  2'合計'
+     A            TSALES        12A  O 21 36DSPATR(HI)
+     A            TCOST         12A  O 21 49DSPATR(HI)
+     A            TMRG          12A  O 21 62DSPATR(HI)
+     A            TRATE          6A  O 21 75DSPATR(HI)
+     A            LMSG          78A  O 22  2COLOR(RED)
+     A                                 23  2'Enter=集計 F3=終了'
+     A                                      COLOR(BLU)

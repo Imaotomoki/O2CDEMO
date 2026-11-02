@@ -1,0 +1,19 @@
+/*=================================================================*/
+/* プログラム: NIGHTCL                                             */
+/* 概要  : 夜間バッチ(点検レポートの印刷)                         */
+/* 修正#BAT: 新規作成                                               */
+/*   NIGHTBAT を呼んで点検レポート(QSYSPRT)を出す                 */
+/*   ライブラリーリストに販売管理のライブラリーが必要              */
+/*   毎晩の実行の登録例(ライブラリー名は環境に合わせる):          */
+/*     ADDJOBSCDE JOB(O2CNIGHT) CMD(CALL PGM(ライブラリー/NIGHTCL)) */
+/*       FRQ(*WEEKLY) SCDDAY(*ALL) SCDTIME('230000')                */
+/*       JOBD(ライブラリーを含むジョブ記述)                        */
+/*=================================================================*/
+             PGM
+             CALL       PGM(NIGHTBAT)
+             MONMSG     MSGID(CPF0000) EXEC(DO)
+             SNDPGMMSG  MSGID(CPF9898) MSGF(QCPFMSG) +
+                          MSGDTA('夜間バッチ NIGHTBAT でエラーが発生+
+                          しました(ジョブログ参照)') MSGTYPE(*ESCAPE)
+             ENDDO
+             ENDPGM

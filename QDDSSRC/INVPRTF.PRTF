@@ -3,9 +3,17 @@
      A* Mod#PRT: 新規作成。INVPRINTから請求書を1枚ずつ出力する
      A* ==========================================================
      A          R PHEAD                     SKIPB(3)
-     A                                    50'御　請　求　書' HIGHLIGHT
+     A* 修正#RET 赤伝(合計がマイナス)は表題を変える
+     A N52                                50'御　請　求　書' HIGHLIGHT
+     A  52                                46'返品・値引き伝票(赤伝)'
+     A                                      HIGHLIGHT
+     A* 修正#INV2 適格請求書: 発行者と登録番号
+     A            PCOMPNM       40O       80SPACEB(1)
+     A                                    80'登録番号'
+     A                                      SPACEB(1)
+     A            PREGNO        20A       92
      A                                     2'お客様'
-     A                                      SPACEB(3)
+     A                                      SPACEB(1)
      A            PCUSTNM       60O       12
      A                                    80'請求番号'
      A            PINVNUM       20A       92
@@ -38,36 +46,39 @@
      A            PLINENO        3S 0      2EDTCDE(Z)
      A            PITEMCD       12A        6
      A            PDESC         40O       19
-     A            PQTY           9S 0     60EDTCDE(1)
-     A N50        PUNITPRC      11S 0     72EDTCDE(1)
+     A            PQTY           9S 0     60EDTCDE(J)
+     A N50        PUNITPRC      11S 0     72EDTCDE(J)
      A  50        PUNITPRCF     14A       72
-     A N50        PLINEAMT      13S 0     87EDTCDE(1)
+     A N50        PLINEAMT      13S 0     87EDTCDE(J)
      A  50        PLINEAMTF     17A       87
      A            PTAXPCT        3S 0    106EDTCDE(3)
      A                                   109'%'
+     A* 修正#INV2 軽減税率の対象品目に※
+     A  51                               110'※'
      A* 税率別の対象額と消費税額(インボイス制度)
      A          R PTAXL                     SPACEB(1)
      A                                    60'税率'
      A            PTXPCT         3S 0     65EDTCDE(3)
      A                                    68'%対象額'
-     A N50        PTXBASE       13S 0     87EDTCDE(1)
+     A N50        PTXBASE       13S 0     87EDTCDE(J)
      A  50        PTXBASEF      17A       87
      A                                    68'消費税額'
      A                                      SPACEB(1)
-     A N50        PTXAMT        13S 0     87EDTCDE(1)
+     A N50        PTXAMT        13S 0     87EDTCDE(J)
      A  50        PTXAMTF       17A       87
      A* 合計
      A          R PTOTAL                    SPACEB(2)
+     A                                     2'※は軽減税率(8%)の対象品目'
      A                                    60'小計'
-     A N50        PSUBTOT       13S 0     87EDTCDE(1)
+     A N50        PSUBTOT       13S 0     87EDTCDE(J)
      A  50        PSUBTOTF      17A       87
      A                                    60'消費税合計'
      A                                      SPACEB(1)
-     A N50        PTAXAMT       13S 0     87EDTCDE(1)
+     A N50        PTAXAMT       13S 0     87EDTCDE(J)
      A  50        PTAXAMTF      17A       87
      A                                    60'御請求金額'
      A                                      SPACEB(1)
-     A N50        PTOTAMT       13S 0     87EDTCDE(1)
+     A N50        PTOTAMT       13S 0     87EDTCDE(J)
      A                                      HIGHLIGHT
      A  50        PTOTAMTF      17A       87
      A                                      HIGHLIGHT

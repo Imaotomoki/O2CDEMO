@@ -1,0 +1,50 @@
+     A* ==========================================================
+     A* USERMNTD - ユーザーとメニュー権限の画面
+     A* 修正#AUT: 新規作成。USERMNT から使う
+     A*   全角の定数の直後は1桁空けて項目を置く(SIと属性桁の重なり防止)
+     A* ==========================================================
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      CA03(03 'F3=終了')
+     A                                      CF11(11 'F11=制限を外す')
+     A                                      CA12(12 'F12=戻る')
+     A                                      PRINT
+     A          R LSFL                      SFL
+     A            LMENU          4A  O  8  3
+     A            LPGM          10A  O  8  9COLOR(GRN)
+     A            LNAME         32A  O  8 21
+     A            LALLOW         1A  B  8 56DSPATR(UL)
+     A                                      VALUES('Y' 'N')
+     A  61                                  COLOR(RED)
+     A          R LCTL                      SFLCTL(LSFL)
+     A                                      SFLSIZ(0040)
+     A                                      SFLPAG(0013)
+     A  91                                  SFLDSP
+     A                                      SFLDSPCTL
+     A  93                                  SFLCLR
+     A  94                                  SFLEND(*MORE)
+     A                                      OVERLAY
+     A                                  1  2'ユーザーとメニュー権限'
+     A                                      DSPATR(HI)
+     A                                  1 70DATE(*SYS) EDTCDE(Y)
+     A                                  3  2'ユーザー'
+     A            LUSER         10A  B  3 13DSPATR(UL)
+     A  31                                  DSPATR(RI PC)
+     A            LSTATE        40A  O  3 26COLOR(TRQ)
+     A                                  4  2'Y=使える N=使えない'
+     A                                      COLOR(BLU)
+     A                                  4 30'(制限なしのユーザーは全部使える)'
+     A                                      COLOR(BLU)
+     A                                  5  2'ユーザーを入れて Enter で表示'
+     A                                      COLOR(BLU)
+     A                                  5 37'変えて Enter で保存'
+     A                                      COLOR(BLU)
+     A                                  7  2'番号'
+     A                                  7  9'プログラム'
+     A                                  7 22'機能'
+     A                                  7 54'使用'
+     A          R LFOOT
+     A            LMSG          78A  O 22  2COLOR(RED)
+     A                                 23  2'Enter=表示・保存 F11=制限解除'
+     A                                      COLOR(BLU)
+     A                                 23 38'F3=終了'
+     A                                      COLOR(BLU)

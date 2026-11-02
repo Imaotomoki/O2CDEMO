@@ -1,0 +1,17 @@
+      *===============================================================
+      * 物理ファイル: MENUAUTP (メニューの権限)
+      * 修正#AUT: 新規作成。USERMNT で保守し、CHKAUTH で確認する
+      *   ユーザーの行が1件もなければ全部の機能を使える
+      *   行があるユーザーは ALLOW='Y' の機能(プログラム)だけ使える
+      *===============================================================
+     A                                      UNIQUE
+     A          R MAUREC
+     A                                      TEXT('メニューの権限')
+     A            USRPRF        10A         COLHDG('ユーザー')
+     A            PGMNAME       10A         COLHDG('プログラム')
+     A            ALLOW          1A         COLHDG('使用可')
+     A                                      TEXT('Y=使える N=使えない')
+     A            UPDUSER       10A         COLHDG('更新者')
+     A            UPDDATE        8P 0       COLHDG('更新日')
+     A          K USRPRF
+     A          K PGMNAME

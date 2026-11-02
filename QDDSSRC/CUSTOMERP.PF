@@ -45,6 +45,10 @@
      A            UPDTIM         6P 0       COLHDG('更新時刻')
      A                                      TEXT('更新時刻')
      A*
+     A* 修正#MST 追加項目(末尾に追加)
+     A            CUSTKANA      40A         COLHDG('振込名義')
+     A                                      TEXT('振込名義(半角カナ)')
+     A*
      A* キー定義
      A          K CUSTID
 

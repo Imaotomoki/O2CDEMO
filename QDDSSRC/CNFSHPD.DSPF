@@ -6,7 +6,7 @@
      A*ORDSFL - 受注一覧 サブファイル
      A          R ORDSFL                    SFL
      A* Mod#PART: 2=分納出荷を追加
-     A            SFLOPT         1A  B  8  3DSPATR(UL) VALUES(' ' '1' '2')
+     A            SFLOPT         1A  B  8  3DSPATR(UL) VALUES(' ' '1' '2' '3')
      A            SFSONUM       20A  O  8  9COLOR(GRN)
      A            SFSODT         8Y 0O  8 30EDTCDE(Z)
      A            SFCUSTNM      20A  O  8 39COLOR(TRQ)
@@ -29,6 +29,9 @@
      A                                  2 72TIME
      A* Mod#INV: 出荷済(未請求)は請求書発行のみ
      A                                  3  3'1=出荷確定  2=分納出荷'
+     A                                      COLOR(GRN)
+     A* 修正#SHP: 3=ピッキングリスト
+     A                                  3 31'3=ピッキングリスト'
      A                                      COLOR(GRN)
      A* Mod#O: 見出しの重なり(選択/受注番号)を解消
      A                                  5  2'選択'

@@ -1,0 +1,75 @@
+/*=================================================================*/
+/* プログラム: MSTMENU                                             */
+/* 概要  : マスター保守メニュー(販売管理メニューの17番から呼ぶ)    */
+/* 修正#MST: 新規作成                                               */
+/*   1=顧客 2=商品 3=倉庫 4=為替レート 5=コード                     */
+/*   6=顧客別単価 7=ユーザーとメニュー権限                          */
+/* 修正#LOG: 8=変更履歴の照会(CHGLOGINQ)                           */
+/*   呼び出した処理でエラーが起きてもメニューは止めず、             */
+/*   メッセージ行に表示する                                         */
+/*=================================================================*/
+             PGM
+
+             DCLF       FILE(MSTMNUD)
+             DCL        VAR(&PGM) TYPE(*CHAR) LEN(10)
+/* 修正#AUT: メニューの権限(CHKAUTH の結果 Y/N)                    */
+             DCL        VAR(&AUTOK) TYPE(*CHAR) LEN(1)
+
+             CHGVAR     VAR(&MMSG) VALUE(' ')
+ LOOP:
+             SNDRCVF    RCDFMT(MENU)
+             IF         COND(&IN03 *OR &IN12) THEN(GOTO CMDLBL(ENDPGM))
+             CHGVAR     VAR(&IN40) VALUE('0')
+             CHGVAR     VAR(&MMSG) VALUE(' ')
+             CHGVAR     VAR(&PGM) VALUE(' ')
+             IF         COND(&MOPT *EQ ' 1' *OR &MOPT *EQ '1 ' +
+                          *OR &MOPT *EQ '01') +
+                          THEN(CHGVAR VAR(&PGM) VALUE('CUSTMNT'))
+             IF         COND(&MOPT *EQ ' 2' *OR &MOPT *EQ '2 ' +
+                          *OR &MOPT *EQ '02') +
+                          THEN(CHGVAR VAR(&PGM) VALUE('ITEMMNT'))
+             IF         COND(&MOPT *EQ ' 3' *OR &MOPT *EQ '3 ' +
+                          *OR &MOPT *EQ '03') +
+                          THEN(CHGVAR VAR(&PGM) VALUE('WHMNT'))
+             IF         COND(&MOPT *EQ ' 4' *OR &MOPT *EQ '4 ' +
+                          *OR &MOPT *EQ '04') +
+                          THEN(CHGVAR VAR(&PGM) VALUE('FXMNT'))
+             IF         COND(&MOPT *EQ ' 5' *OR &MOPT *EQ '5 ' +
+                          *OR &MOPT *EQ '05') +
+                          THEN(CHGVAR VAR(&PGM) VALUE('CODEMNT'))
+             IF         COND(&MOPT *EQ ' 6' *OR &MOPT *EQ '6 ' +
+                          *OR &MOPT *EQ '06') +
+                          THEN(CHGVAR VAR(&PGM) VALUE('PRICEMNT'))
+             IF         COND(&MOPT *EQ ' 7' *OR &MOPT *EQ '7 ' +
+                          *OR &MOPT *EQ '07') +
+                          THEN(CHGVAR VAR(&PGM) VALUE('USERMNT'))
+             IF         COND(&MOPT *EQ ' 8' *OR &MOPT *EQ '8 ' +
+                          *OR &MOPT *EQ '08') +
+                          THEN(CHGVAR VAR(&PGM) VALUE('CHGLOGINQ'))
+             IF         COND(&PGM *EQ ' ') THEN(DO)
+             IF         COND(&MOPT *NE '  ') THEN(DO)
+             CHGVAR     VAR(&IN40) VALUE('1')
+             CHGVAR     VAR(&MMSG) VALUE('1から8の番号を選んでください')
+             ENDDO
+             GOTO       CMDLBL(LOOP)
+             ENDDO
+/* 修正#AUT: 権限のない機能は呼ばない(CHKAUTH がなければ制限なし) */
+             CHGVAR     VAR(&AUTOK) VALUE('Y')
+             CALL       PGM(CHKAUTH) PARM(&PGM &AUTOK)
+             MONMSG     MSGID(CPF0000)
+             IF         COND(&AUTOK *EQ 'N') THEN(DO)
+             CHGVAR     VAR(&IN40) VALUE('1')
+             CHGVAR     VAR(&MMSG) VALUE('この機能を使う権限がありません')
+             CHGVAR     VAR(&MOPT) VALUE(' ')
+             GOTO       CMDLBL(LOOP)
+             ENDDO
+             CALL       PGM(&PGM)
+             MONMSG     MSGID(CPF0000) EXEC(DO)
+             CHGVAR     VAR(&MMSG) VALUE(&PGM *TCAT +
+                          ' でエラーが発生しました(ジョブログ参照)')
+             ENDDO
+             CHGVAR     VAR(&MOPT) VALUE(' ')
+             GOTO       CMDLBL(LOOP)
+
+ ENDPGM:
+             ENDPGM
