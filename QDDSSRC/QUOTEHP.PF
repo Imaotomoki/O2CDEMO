@@ -1,0 +1,29 @@
+      *===============================================================
+      * 物理ファイル: QUOTEHP (見積ヘッダ)
+      * 修正#QT: 新規作成。QUOTENT で入力し、受注へ変換する
+      *   状態: OPEN=未受注 ORDERED=受注済 CANCELLED=取消
+      *   採番: O2C_QTID_SEQ
+      *===============================================================
+     A                                      UNIQUE
+     A          R QTHREC
+     A                                      TEXT('見積ヘッダ')
+     A            QTID          18P 0       COLHDG('見積ID')
+     A            QTNUM         20A         COLHDG('見積番号')
+     A            CUSTID         9P 0       COLHDG('顧客ID')
+     A            QTDATE         8P 0       COLHDG('見積日')
+     A            VALIDTO        8P 0       COLHDG('有効期限')
+     A            CURRCD         3A         COLHDG('通貨')
+     A            WHID           4P 0       COLHDG('倉庫ID')
+     A            STATUS        12A         COLHDG('状態')
+     A            TOTAMT        15P 2       COLHDG('合計(税抜)')
+     A            TAXAMT        15P 2       COLHDG('消費税')
+     A            SONUM         20A         COLHDG('受注番号')
+     A                                      TEXT('変換した受注番号')
+     A            QTNOTE        40O         COLHDG('件名')
+     A            CRTUSER       30O         COLHDG('作成者')
+     A            CRTDATE        8P 0       COLHDG('作成日')
+     A            CRTTIM         6P 0       COLHDG('作成時刻')
+     A            UPDUSER       30O         COLHDG('更新者')
+     A            UPDDATE        8P 0       COLHDG('更新日')
+     A            UPDTIM         6P 0       COLHDG('更新時刻')
+     A          K QTID

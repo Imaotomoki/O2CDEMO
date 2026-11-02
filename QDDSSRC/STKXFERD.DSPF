@@ -1,0 +1,53 @@
+     A* ==========================================================
+     A* STKXFERD - 倉庫間の在庫移動の画面
+     A* 修正#XFR: 新規作成。STKXFER から使う
+     A*   全角の定数の直後は1桁空けて項目を置く(SIと属性桁の重なり防止)
+     A* ==========================================================
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      CA03(03 'F3=終了')
+     A                                      CF04(04 'F4=検索')
+     A                                      CF06(06 'F6=移動')
+     A                                      CA12(12 'F12=戻る')
+     A                                      PRINT
+     A          R XFER
+     A                                      RTNCSRLOC(&CSRRCD &CSRFLD)
+     A            CSRRCD        10A  H
+     A            CSRFLD        10A  H
+     A                                  1  2'倉庫間の在庫移動'
+     A                                      DSPATR(HI)
+     A                                  1 70DATE(*SYS) EDTCDE(Y)
+     A                                  3  2'商品コード'
+     A            XITEM         12A  B  3 17DSPATR(UL)
+     A  31                                  DSPATR(RI PC)
+     A            XITEMNM       40A  O  3 31COLOR(TRQ)
+     A                                  5  2'移動元の倉庫'
+     A            XFROM          4Y 0B  5 17EDTCDE(Z)
+     A                                      DSPATR(UL)
+     A  32                                  DSPATR(RI PC)
+     A            XFROMNM       20A  O  5 23COLOR(TRQ)
+     A                                  5 44'有効在庫'
+     A            XFAVL         12A  O  5 55
+     A                                  6  2'移動先の倉庫'
+     A            XTO            4Y 0B  6 17EDTCDE(Z)
+     A                                      DSPATR(UL)
+     A  33                                  DSPATR(RI PC)
+     A            XTONM         20A  O  6 23COLOR(TRQ)
+     A                                  6 44'現在庫'
+     A            XTOH          12A  O  6 55
+     A                                  8  2'移動数'
+     A            XQTY           9Y 0B  8 17EDTCDE(Z)
+     A                                      DSPATR(UL)
+     A  34                                  DSPATR(RI PC)
+     A                                  9  2'参照番号'
+     A            XREF          20A  B  9 17DSPATR(UL)
+     A                                  9 38'(移動伝票の番号など)'
+     A                                      COLOR(BLU)
+     A                                 11  2'移動元の有効在庫(在庫-引当)'
+     A                                      COLOR(BLU)
+     A                                 11 41'を超えて移動はできません'
+     A                                      COLOR(BLU)
+     A            XMSG          78A  O 22  2COLOR(RED)
+     A                                 23  2'Enter=確認 F6=移動 F4=検索'
+     A                                      COLOR(BLU)
+     A                                 23 42'F3=終了'
+     A                                      COLOR(BLU)

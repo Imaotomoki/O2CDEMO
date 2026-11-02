@@ -41,6 +41,18 @@
      A            UPDTIM         6P 0       COLHDG('更新時刻')
      A                                      TEXT('更新時刻')
      A*
+     A* 修正#MST 追加項目(末尾に追加)
+     A            TAXCAT        10A         COLHDG('税区分')
+     A                                      TEXT('税区分(空白=顧客)')
+     A            STDCOST       15P 4       COLHDG('標準原価')
+     A                                      TEXT('標準原価')
+     A            REORDPT       15P 3       COLHDG('発注点')
+     A                                      TEXT('発注点(0=発注しない)')
+     A            REORDQTY      15P 3       COLHDG('発注数量')
+     A                                      TEXT('発注数量')
+     A            SUPPCD        20A         COLHDG('仕入先')
+     A                                      TEXT('仕入先コード(SUPPLIER)')
+     A*
      A* キー定義
      A          K ITEMID
 

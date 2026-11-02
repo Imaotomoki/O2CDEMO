@@ -18,6 +18,8 @@
       *   修正#JP  状態をコードマスターの日本語名称で表示
       *   修正#PART 2=分納出荷: 明細別に今回出荷数量を入力して出荷
       *            一部出荷(PARTIAL)の受注も一覧に表示
+      *   修正#SHP 3=ピッキングリストを印刷。出荷確定したら納品書を印刷
+      *            (SHPPRINT。印刷に失敗しても出荷・請求は続ける)
       *=====================================================================
 
       *---------------------------------------------------------------------
@@ -70,6 +72,11 @@
       * [修正#B] 全角(DBCS)を壊さずに切り詰める
      D W#SO            C                   X'0E'
      D W#SI            C                   X'0F'
+      * [修正#SHP] ピッキングリスト・納品書
+     D SHPPRINT        PR                  EXTPGM('SHPPRINT')
+     D   PTYPE                        1A   CONST
+     D   PSOID                       18P 0
+     D W#PCKCNT        S             10I 0
      D DbcsTrunc       PR           256A   VARYING
      D   pStr                       256A   VARYING CONST
      D   pMax                        10I 0 CONST
@@ -198,8 +205,20 @@
      C                   EVAL      W#ERRMSG = *BLANKS
      C                   EVAL      W#OKCNT = 0
      C                   EVAL      W#NGCNT = 0
+     C                   EVAL      W#PCKCNT = 0
      C                   READC     ORDSFL                                 99
      C                   DOW       NOT *IN99
+      * [修正#SHP] 3=ピッキングリスト
+     C                   IF        SFLOPT = '3'
+     C                   EVAL      W#SOID = SFSOID
+     C                   CALLP(E)  SHPPRINT('P':W#SOID)
+     C                   IF        %ERROR
+     C                   EVAL      W#ERRMSG = 'ピッキングリスト印刷エラー:' +
+     C                             %TRIM(SFSONUM)
+     C                   ELSE
+     C                   EVAL      W#PCKCNT = W#PCKCNT + 1
+     C                   ENDIF
+     C                   ENDIF
      C                   IF        SFLOPT = '1' OR SFLOPT = '2'
      C                   EVAL      W#SOID = SFSOID
      C                   EVAL      W#WHID = SFWHID
@@ -217,6 +236,12 @@
      C                   READC     ORDSFL                                 99
      C                   ENDDO
       * ステータス更新を反映するためサブファイルを再ロード
+     C                   IF        W#PCKCNT > 0 AND W#OKCNT + W#NGCNT = 0
+     C                             AND W#ERRMSG = *BLANKS
+     C                   EVAL      W#ERRMSG = %CHAR(W#PCKCNT) +
+     C                             '件のピッキングリストを印刷しました'
+     C                   EXSR      @LOADSFL
+     C                   ENDIF
      C                   IF        W#OKCNT + W#NGCNT > 0
      C                   EXSR      @LOADSFL
      C                   IF        W#NGCNT = 0
@@ -240,6 +265,8 @@
      C                             %TRIM(W#SONUM) + ' (ジョブログ参照)'
      C                   LEAVESR
      C                   ENDIF
+      * [修正#SHP] 納品書
+     C                   CALLP(E)  SHPPRINT('D':W#SOID)
      C                   ENDIF
       * SORDERHPからCUSTIDを取得
      C     W#SOID        CHAIN     SORDERHP

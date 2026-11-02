@@ -1,0 +1,185 @@
+     A* ==========================================================
+     A* POENTRYD - 発注点・発注・入荷の画面
+     A* 修正#PO: 新規作成。POENTRY から使う
+     A*   全角の定数の直後は1桁空けて項目を置く(SIと属性桁の重なり防止)
+     A* ==========================================================
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      CA03(03 'F3=終了')
+     A                                      CF04(04 'F4=検索')
+     A                                      CF06(06 'F6=新規・登録')
+     A                                      CF07(07 'F7=発注点')
+     A                                      CA12(12 'F12=戻る')
+     A                                      PRINT
+     A* ---- LSFL - 発注の一覧 ----
+     A          R LSFL                      SFL
+     A            LOPT           1A  B  7  2DSPATR(UL)
+     A                                      VALUES(' ' '4' '5' '6')
+     A            LPONUM        10A  O  7  4COLOR(GRN)
+     A            LSUPP         12A  O  7 15
+     A            LPODT         10A  O  7 28
+     A            LDUE          10A  O  7 39
+     A            LAMT          14A  O  7 50
+     A            LSTS          12A  O  7 66
+     A  61                                  COLOR(RED)
+     A            LID           18S 0H
+     A          R LCTL                      SFLCTL(LSFL)
+     A                                      SFLSIZ(0999)
+     A                                      SFLPAG(0014)
+     A  91                                  SFLDSP
+     A  92                                  SFLDSPCTL
+     A  93                                  SFLCLR
+     A  94                                  SFLEND(*MORE)
+     A                                      OVERLAY
+     A                                  1  2'発注点・発注・入荷'
+     A                                      DSPATR(HI)
+     A                                  1 70DATE(*SYS) EDTCDE(Y)
+     A                                  3  2'表示する発注'
+     A            LFSTS          1A  B  3 17DSPATR(UL)
+     A                                      VALUES(' ' 'A')
+     A                                  3 20'(空白=未入荷 A=全部)'
+     A                                      COLOR(BLU)
+     A            LALERT        40A  O  5  2COLOR(RED)
+     A                                  4  2'4=取消 5=表示 6=入荷'
+     A                                      COLOR(BLU)
+     A                                  4 30'F6=新規 F7=発注点を下回る商品'
+     A                                      COLOR(BLU)
+     A                                  6  4'発注番号'
+     A                                  6 15'仕入先'
+     A                                  6 28'発注日'
+     A                                  6 39'入荷予定'
+     A                                  6 51'合計(税抜)'
+     A                                  6 66'状態'
+     A* ---- LFOOT ----
+     A          R LFOOT
+     A            LMSG          78A  O 22  2COLOR(RED)
+     A                                 23  2'F3=終了 F6=新規 F7=発注点'
+     A                                      COLOR(BLU)
+     A* ---- PSFL - 発注点を下回る商品(発注の提案) ----
+     A          R PSFL                      SFL
+     A            POPT           1A  B  7  2DSPATR(UL)
+     A                                      VALUES(' ' '1')
+     A            PITEM         12A  O  7  4
+     A            PNAME         16A  O  7 17COLOR(TRQ)
+     A            PWH           10A  O  7 34
+     A            PAVL           8A  O  7 45
+     A            PONORD         8A  O  7 54
+     A            PRPT           7A  O  7 63
+     A            PQTY           7Y 0B  7 71EDTCDE(Z)
+     A                                      DSPATR(UL)
+     A  42                                  DSPATR(RI PC)
+     A            PITEMID        9S 0H
+     A            PWHID          4S 0H
+     A            PSUPP         20A  H
+     A          R PCTL                      SFLCTL(PSFL)
+     A                                      SFLSIZ(0999)
+     A                                      SFLPAG(0014)
+     A  81                                  SFLDSP
+     A                                      SFLDSPCTL
+     A  83                                  SFLCLR
+     A  84                                  SFLEND(*MORE)
+     A                                      OVERLAY
+     A                                  1  2'発注点を下回る商品(発注の提案)'
+     A                                      DSPATR(HI)
+     A                                  1 70DATE(*SYS) EDTCDE(Y)
+     A                                  3  2'1=発注する(数量は変更可)'
+     A                                      COLOR(BLU)
+     A                                  3 32'仕入先・倉庫ごとに発注を作ります'
+     A                                      COLOR(BLU)
+     A                                  4  2'有効在庫+発注残が発注点より'
+     A                                      COLOR(BLU)
+     A                                  4 35'少ない商品です'
+     A                                      COLOR(BLU)
+     A                                  6  4'商品コード'
+     A                                  6 17'品名'
+     A                                  6 34'倉庫'
+     A                                  6 43'有効在庫'
+     A                                  6 55'発注残'
+     A                                  6 64'発注点'
+     A                                  6 73'発注数'
+     A* ---- PFOOT ----
+     A          R PFOOT
+     A            PMSG          78A  O 22  2COLOR(RED)
+     A                                 23  2'Enter=発注を作成 F12=戻る'
+     A                                      COLOR(BLU)
+     A* ---- DSFL - 発注の明細 ----
+     A          R DSFL                      SFL
+     A            SNO            2S 0O  9  2
+     A            SITEM         12A  B  9  5
+     A N53                                  DSPATR(UL)
+     A  53                                  DSPATR(PR)
+     A  41                                  DSPATR(RI PC)
+     A            SINAME        16A  O  9 18COLOR(TRQ)
+     A            SQTY           9Y 0B  9 35EDTCDE(Z)
+     A N53                                  DSPATR(UL)
+     A  53                                  DSPATR(PR)
+     A  42                                  DSPATR(RI PC)
+     A            SCOST         11Y 2B  9 45EDTCDE(2)
+     A N53                                  DSPATR(UL)
+     A  53                                  DSPATR(PR)
+     A  43                                  DSPATR(RI PC)
+     A            SRCV           9A  O  9 60
+     A            SNOW           9Y 0B  9 70EDTCDE(Z)
+     A  52                                  DSPATR(UL)
+     A N52                                  DSPATR(ND PR)
+     A  44                                  DSPATR(RI PC)
+     A* ---- DCTL - 発注のヘッダ ----
+     A          R DCTL                      SFLCTL(DSFL)
+     A                                      SFLSIZ(0010)
+     A                                      SFLPAG(0010)
+     A                                      SFLDSP
+     A                                      SFLDSPCTL
+     A  93                                  SFLCLR
+     A                                      OVERLAY
+     A                                      RTNCSRLOC(&CSRRCD &CSRFLD)
+     A                                      SFLCSRRRN(&CSRRRN)
+     A            CSRRCD        10A  H
+     A            CSRFLD        10A  H
+     A            CSRRRN         5S 0H
+     A            DMODE         20A  O  1  2DSPATR(HI)
+     A                                  1 70DATE(*SYS) EDTCDE(Y)
+     A                                  3  2'発注番号'
+     A            DPONUM        20A  O  3 14COLOR(GRN)
+     A                                  3 40'発注日'
+     A            DPODT          8Y 0B  3 53
+     A N50                                  DSPATR(UL)
+     A  50                                  DSPATR(PR)
+     A  32                                  DSPATR(RI PC)
+     A                                  4  2'仕入先'
+     A            DSUPP         20A  B  4 14
+     A N50                                  DSPATR(UL)
+     A  50                                  DSPATR(PR)
+     A  31                                  DSPATR(RI PC)
+     A            DSUPNM        30A  O  4 36COLOR(TRQ)
+     A                                  5  2'入荷倉庫'
+     A            DWHID          4Y 0B  5 14EDTCDE(Z)
+     A N50                                  DSPATR(UL)
+     A  50                                  DSPATR(PR)
+     A  34                                  DSPATR(RI PC)
+     A            DWHNM         16A  O  5 20COLOR(TRQ)
+     A                                  5 40'入荷予定日'
+     A            DDUE           8Y 0B  5 53
+     A N50                                  DSPATR(UL)
+     A  50                                  DSPATR(PR)
+     A  33                                  DSPATR(RI PC)
+     A                                  6  2'状態'
+     A            DSTS          12A  O  6 14
+     A                                  6 40'合計(税抜)'
+     A            DTOT          14A  O  6 56DSPATR(HI)
+     A                                  8  2'No'
+     A                                  8  5'商品コード'
+     A                                  8 18'品名'
+     A                                  8 37'発注数'
+     A                                  8 49'仕入単価'
+     A                                  8 61'入荷済'
+     A  52                              8 70'今回入荷'
+     A* ---- DFOOT ----
+     A          R DFOOT
+     A            DMSG          78A  O 22  2COLOR(RED)
+     A N50                             23  2'Enter=計算 F6=登録 F4=検索'
+     A                                      COLOR(BLU)
+     A N50                             23 36'単価0=標準原価'
+     A                                      COLOR(BLU)
+     A  52                             23  2'Enter=確認 F6=入荷を登録'
+     A                                      COLOR(BLU)
+     A                                 23 66'F12=戻る'
+     A                                      COLOR(BLU)

@@ -1,0 +1,31 @@
+      *===============================================================
+      * 物理ファイル: BANKINP (取り込んだ入金データ)
+      * 修正#BNK: 新規作成。PAYIMP で銀行の入金データ(CSV)を取り込み
+      *   顧客・請求書を推定してから入金(PAYMENTP)を作る
+      *   状態: NEW=顧客不明 MATCHED=推定済 APPLIED=入金済
+      *         IGNORED=対象外
+      *   推定: EXACT=請求書と一致 FEE=手数料差し引き TOTAL=未収合計
+      *         FIFO=古い請求書から ADVANCE=前受金が残る
+      *   採番: O2C_BKID_SEQ
+      *===============================================================
+     A                                      UNIQUE
+     A          R BKREC
+     A                                      TEXT('入金データ')
+     A            BKID          18P 0       COLHDG('取込ID')
+     A            IMPDATE        8P 0       COLHDG('取込日')
+     A            PAYDATE        8P 0       COLHDG('入金日')
+     A            AMOUNT        15P 2       COLHDG('入金額')
+     A            PAYERNM       48O         COLHDG('振込依頼人')
+     A                                      TEXT('振込依頼人(全角に変換)')
+     A            CUSTID         9P 0       COLHDG('顧客ID')
+     A            INVID         18P 0       COLHDG('請求ID')
+     A                                      TEXT('請求ID(0=古い順)')
+     A            FEEAMT        15P 2       COLHDG('手数料')
+     A                                      TEXT('振込手数料(差額)')
+     A            MATCHTYP      10A         COLHDG('推定')
+     A            STATUS        10A         COLHDG('状態')
+     A            PAYID         18P 0       COLHDG('入金ID')
+     A            CRTUSER       30O         COLHDG('作成者')
+     A            CRTDATE        8P 0       COLHDG('作成日')
+     A            CRTTIM         6P 0       COLHDG('作成時刻')
+     A          K BKID

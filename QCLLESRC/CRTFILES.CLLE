@@ -168,6 +168,55 @@
                           TEXT('請求締め履歴')
              MONMSG     MSGID(CPF7302)
 
+/* 修正#NEW: 追加機能のファイル(返品・単価・見積・入金・発注・権限) */
+             CRTPF      FILE(&LIB/RETURNP) +
+                          SRCFILE(&LIB/QDDSSRC) +
+                          MAXMBRS(*NOMAX) SIZE(*NOMAX) +
+                          TEXT('返品・値引き明細')
+             MONMSG     MSGID(CPF7302)
+
+             CRTPF      FILE(&LIB/PRICEP) +
+                          SRCFILE(&LIB/QDDSSRC) +
+                          MAXMBRS(*NOMAX) SIZE(*NOMAX) +
+                          TEXT('顧客別単価')
+             MONMSG     MSGID(CPF7302)
+
+             CRTPF      FILE(&LIB/QUOTEHP) +
+                          SRCFILE(&LIB/QDDSSRC) +
+                          MAXMBRS(*NOMAX) SIZE(*NOMAX) +
+                          TEXT('見積ヘッダ')
+             MONMSG     MSGID(CPF7302)
+
+             CRTPF      FILE(&LIB/QUOTELP) +
+                          SRCFILE(&LIB/QDDSSRC) +
+                          MAXMBRS(*NOMAX) SIZE(*NOMAX) +
+                          TEXT('見積明細')
+             MONMSG     MSGID(CPF7302)
+
+             CRTPF      FILE(&LIB/BANKINP) +
+                          SRCFILE(&LIB/QDDSSRC) +
+                          MAXMBRS(*NOMAX) SIZE(*NOMAX) +
+                          TEXT('入金データ')
+             MONMSG     MSGID(CPF7302)
+
+             CRTPF      FILE(&LIB/POHDRP) +
+                          SRCFILE(&LIB/QDDSSRC) +
+                          MAXMBRS(*NOMAX) SIZE(*NOMAX) +
+                          TEXT('発注ヘッダ')
+             MONMSG     MSGID(CPF7302)
+
+             CRTPF      FILE(&LIB/POLINEP) +
+                          SRCFILE(&LIB/QDDSSRC) +
+                          MAXMBRS(*NOMAX) SIZE(*NOMAX) +
+                          TEXT('発注明細')
+             MONMSG     MSGID(CPF7302)
+
+             CRTPF      FILE(&LIB/MENUAUTP) +
+                          SRCFILE(&LIB/QDDSSRC) +
+                          MAXMBRS(*NOMAX) SIZE(*NOMAX) +
+                          TEXT('メニューの権限')
+             MONMSG     MSGID(CPF7302)
+
              SNDPGMMSG  MSG('論理ファイルを作成中...') +
                           TOPGMQ(*EXT) MSGTYPE(*INFO)
 
@@ -274,6 +323,42 @@
                           START WITH 1')
              RUNSQL     SQL(&SQL) COMMIT(*NONE) NAMING(*SQL)
              MONMSG     MSGID(SQL9010)
+
+/* 修正#NEW: 追加機能の採番シーケンス */
+             CHGVAR     VAR(&SQL) VALUE('CREATE SEQUENCE ' *CAT +
+                          &LIB *TCAT '.O2C_RETID_SEQ AS BIGINT +
+                          START WITH 1')
+             RUNSQL     SQL(&SQL) COMMIT(*NONE) NAMING(*SQL)
+             MONMSG     MSGID(SQL9010)
+
+             CHGVAR     VAR(&SQL) VALUE('CREATE SEQUENCE ' *CAT +
+                          &LIB *TCAT '.O2C_PRICEID_SEQ AS BIGINT +
+                          START WITH 1')
+             RUNSQL     SQL(&SQL) COMMIT(*NONE) NAMING(*SQL)
+             MONMSG     MSGID(SQL9010)
+
+             CHGVAR     VAR(&SQL) VALUE('CREATE SEQUENCE ' *CAT +
+                          &LIB *TCAT '.O2C_QTID_SEQ AS BIGINT +
+                          START WITH 1')
+             RUNSQL     SQL(&SQL) COMMIT(*NONE) NAMING(*SQL)
+             MONMSG     MSGID(SQL9010)
+
+             CHGVAR     VAR(&SQL) VALUE('CREATE SEQUENCE ' *CAT +
+                          &LIB *TCAT '.O2C_BKID_SEQ AS BIGINT +
+                          START WITH 1')
+             RUNSQL     SQL(&SQL) COMMIT(*NONE) NAMING(*SQL)
+             MONMSG     MSGID(SQL9010)
+
+             CHGVAR     VAR(&SQL) VALUE('CREATE SEQUENCE ' *CAT +
+                          &LIB *TCAT '.O2C_POID_SEQ AS BIGINT +
+                          START WITH 1')
+             RUNSQL     SQL(&SQL) COMMIT(*NONE) NAMING(*SQL)
+             MONMSG     MSGID(SQL9010)
+
+/* 修正#LOG: 変更履歴のトリガー(QSQLSRC の O2CTRIG。なければ飛ばす) */
+             RUNSQLSTM  SRCFILE(&LIB/QSQLSRC) SRCMBR(O2CTRIG) +
+                          COMMIT(*NONE) NAMING(*SQL) DFTRDBCOL(&LIB)
+             MONMSG     MSGID(CPF0000 SQL0000)
 
              SNDPGMMSG  MSG('ファイル作成が完了しました') +
                           TOPGMQ(*EXT) MSGTYPE(*COMP)

@@ -20,6 +20,7 @@
       *            希望納期は日付演算(従来はYYYYMMDD+10で無効日付)
       *            明細金額は税抜(ORDERENTRY/請求書と統一)
       *   修正#NODSP DSPLYを廃止(バッチ実行で応答待ちになるため)
+      *   修正#INV2 税率は明細ごと(商品の税区分。軽減税率8%)
       *   修正#RULE 受注入力(ORDERENTRY)と同じ業務ルールを確認する
       *          取引停止の顧客・販売停止の商品は受注できない
       *          与信限度額を超える受注はできない(限度額0は無制限)
@@ -51,6 +52,8 @@
      D W#UNSHIP        S             15P 2
      D W#UNBILL        S             15P 2
      D W#NEWAMT        S             15P 2
+     D W#TAXINC        S             15P 2
+     D W#LNRATE        S              5P 3
      D W#LINEAMT       S             15P 2
      D W#FOUND         S               N
      D W#ERROR         S               N
@@ -338,10 +341,28 @@
      C                   EVAL      ITEMID = W#ITEMID
      C                   EVAL      ORDQTY = W#ORDQTY
      C                   EVAL      UNITPRC = W#UNITPRC
-     C                   EVAL      TAXRATE = W#TAXRATE
+      * 修正#INV2 税率は商品の税区分(空白はパラメーターの税率)
+      *   顧客が非課税・輸出免税なら0
+     C                   SELECT
+     C                   WHEN      CUST_TAXCAT = 'EXEMPT' OR
+     C                             CUST_TAXCAT = 'EXPORT'
+     C                   EVAL      W#LNRATE = 0
+     C                   WHEN      ITM_TAXCAT = 'REDUCED'
+     C                   EVAL      W#LNRATE = 0.080
+     C                   WHEN      ITM_TAXCAT = 'EXEMPT' OR
+     C                             ITM_TAXCAT = 'EXPORT'
+     C                   EVAL      W#LNRATE = 0
+     C                   WHEN      ITM_TAXCAT = 'STANDARD'
+     C                   EVAL      W#LNRATE = 0.100
+     C                   OTHER
+     C                   EVAL      W#LNRATE = W#TAXRATE
+     C                   ENDSL
+     C                   EVAL      TAXRATE = W#LNRATE
       * 明細金額計算
       * 修正#HDR: 税抜(税額は請求書発行時に税率から計算する)
      C                   EVAL(H)   W#LINEAMT = W#ORDQTY * W#UNITPRC
+     C                   EVAL(H)   W#TAXINC = W#TAXINC + W#LINEAMT *
+     C                             (1 + W#LNRATE)
      C                   EVAL      LINEAMT = W#LINEAMT
      C                   EVAL      ALCQTY = W#ORDQTY
      C                   EVAL      SHPQTY = *ZERO
@@ -403,7 +424,8 @@
      C                   EVAL      W#ERRMSG = '与信情報の取得に失敗しました'
      C                   LEAVESR
      C                   ENDIF
-     C                   EVAL(H)   W#NEWAMT = W#TOTAMT * (1 + W#TAXRATE)
+      * 修正#INV2 明細ごとの税率で求めた税込合計
+     C                   EVAL      W#NEWAMT = W#TAXINC
      C                   IF        W#NEWAMT > CUST_CREDLMT - W#AR - W#UNSHIP
      C                             - W#UNBILL
      C                   EVAL      W#ERROR = *ON

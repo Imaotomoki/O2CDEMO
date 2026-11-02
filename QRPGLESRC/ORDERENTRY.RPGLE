@@ -32,6 +32,8 @@
       *  修正#CMT - 在庫引当/受注/明細をコミットメント制御で一括確定
       *  修正#CRD - 与信チェック(未収+未出荷+未請求+今回 > 限度額)
       *            取引停止の顧客・販売停止の商品はエラー
+      *  修正#INV2 - 税率は明細ごと(商品の税区分。軽減税率8%)
+      *  修正#PRC2 - 単価が空白なら顧客別単価・数量割引(PRICEP)
       *===============================================================
 
       *---------------------------------------------------------------
@@ -105,6 +107,13 @@
      D L_ORDQTY        S             15P 3 DIM(20)
      D L_UNITPRC       S             15P 4 DIM(20)
      D L_LINEAMT       S             15P 2 DIM(20)
+      * 修正#INV2 明細ごとの税率(商品の税区分。空白は顧客の税区分)
+     D L_TAXRT         S              5P 3 DIM(20)
+      * 修正#PRC2 顧客別単価
+     D W#PRICE         S             15P 4
+     D W#ODATE         S              8P 0
+     D W#CUSTCAT       S             10A
+     D W#LNRATE        S              5P 3
       * 修正#20: 在庫引当用作業変数
      D W#ALCERRFLG     S               N
      D W#ALCERRMSG     S             52A
@@ -381,6 +390,7 @@
      C                   OTHER
      C                   EVAL      W#TAXRATE = 0.100
      C                   ENDSL
+     C                   EVAL      W#CUSTCAT = C_TAXCAT
      C                   ENDIF
 
      C                   IF        ORDDATE = *BLANK
@@ -660,6 +670,7 @@
      C                   EVAL      L_ORDQTY(W#IDX) = L_ORDQTY(W#LINENO)
      C                   EVAL      L_UNITPRC(W#IDX)= L_UNITPRC(W#LINENO)
      C                   EVAL      L_LINEAMT(W#IDX)= L_LINEAMT(W#LINENO)
+     C                   EVAL      L_TAXRT(W#IDX) = L_TAXRT(W#LINENO)
      C                   EVAL      W#IDX = W#IDX + 1
      C                   ENDDO
      C                   EVAL      W#LINE_COUNT = W#LINE_COUNT - 1
@@ -706,6 +717,8 @@
      C                   ITER
      C                   ENDIF
 
+      * 修正#INV2 明細の税率を決める(商品の税区分)
+     C                   EXSR      @LINETAX
       * 修正#B: SFLRRNが既確定行(<=W#LINE_COUNT)なら配列の上書き更新
       *         SFLRRNが未確定行(>W#LINE_COUNT) なら新規行として追加
      C                   IF        SFLRRN <= W#LINE_COUNT
@@ -718,6 +731,7 @@
      C                   EVAL      L_ORDQTY(W#IDX) = ORDQTY
      C                   EVAL      L_UNITPRC(W#IDX) = UNITPRC
      C                   EVAL      L_LINEAMT(W#IDX) = ORDQTY * UNITPRC
+     C                   EVAL      L_TAXRT(W#IDX) = W#LNRATE
      C                   EVAL      W#AMT = L_LINEAMT(W#IDX)
      C                   EVAL      W#TOTAMT = W#TOTAMT + W#AMT
      C                   EXSR      @PUTPRC
@@ -732,6 +746,7 @@
      C                   EVAL      L_ORDQTY(W#IDX) = ORDQTY
      C                   EVAL      L_UNITPRC(W#IDX) = UNITPRC
      C                   EVAL      L_LINEAMT(W#IDX) = ORDQTY * UNITPRC
+     C                   EVAL      L_TAXRT(W#IDX) = W#LNRATE
      C                   EVAL      W#AMT = L_LINEAMT(W#IDX)
      C                   EVAL      W#TOTAMT = W#TOTAMT + W#AMT
      C                   EXSR      @PUTPRC
@@ -806,9 +821,6 @@
      C                   EVAL      ERRMSG = '販売停止中の商品です'
      C                   LEAVESR
      C                   ENDIF
-     C                   IF        UNITPRC = 0
-     C                   EVAL      UNITPRC = I_UNITPRC
-     C                   ENDIF
      C                   ENDIF
 
       * 修正#J: 選択倉庫に在庫レコードがない商品は入力時点でエラー
@@ -827,6 +839,11 @@
      C                   LEAVESR
      C                   ELSE
      C                   EVAL      *IN42 = *OFF
+     C                   ENDIF
+      * 修正#PRC2 単価が空白なら顧客別単価・数量割引(なければ標準単価)
+     C                   IF        UNITPRC = 0
+     C                   EXSR      @PRICE
+     C                   EVAL      UNITPRC = W#PRICE
      C                   ENDIF
 
      C                   IF        UNITPRC < 0
@@ -1022,7 +1039,7 @@
      C                   EVAL      SL_ITEMID = L_ITEMID(W#IDX)
      C                   EVAL      SL_ORDQTY = L_ORDQTY(W#IDX)
      C                   EVAL      SL_UNITPRC = L_UNITPRC(W#IDX)
-     C                   EVAL      SL_TAXRATE = W#TAXRATE
+     C                   EVAL      SL_TAXRATE = L_TAXRT(W#IDX)
      C                   EVAL      SL_LINEAMT = L_LINEAMT(W#IDX)
      C                   EVAL      SL_ALCQTY = L_ORDQTY(W#IDX)
      C                   EVAL      SL_SHPQTY = 0
@@ -1082,7 +1099,12 @@
      C+     JOIN SORDERHP H ON H.SOID = S.SOID
      C+    WHERE H.CUSTID = :W#CUSTID AND S.STATUS = 'SHIPPED'
      C/END-EXEC
-     C                   EVAL(H)   W#NEWAMT = W#TOTAMT * (1 + W#TAXRATE)
+      * 修正#INV2 明細ごとの税率で税込金額を求める
+     C                   EVAL      W#NEWAMT = 0
+     C                   FOR       W#J = 1 TO W#LINE_COUNT
+     C                   EVAL(H)   W#NEWAMT = W#NEWAMT + L_LINEAMT(W#J) *
+     C                             (1 + L_TAXRT(W#J))
+     C                   ENDFOR
      C                   EVAL      W#CRDREM = W#CREDLMT - W#AR - W#UNSHIP
      C                             - W#UNBILL
      C                   IF        W#NEWAMT > W#CRDREM
@@ -1093,6 +1115,56 @@
      C                   EVAL      ERRMSG = '与信限度額超過(残り与信 ' +
      C                             %CHAR(%DEC(W#CRDREM:15:0)) + '円)'
      C                   ENDIF
+     C                   ENDSR
+
+     C*===============================================================
+     C* 修正#PRC2 @PRICE - 単価(W#PRICE)を決める
+     C*   顧客別単価(PRICEP)のうち、受注日に有効で最低数量を満たすもの
+     C*   顧客指定 > 全顧客(顧客ID 0)、最低数量の大きいもの、開始日の
+     C*   新しいものを優先。なければ商品の標準単価
+     C*===============================================================
+     C     @PRICE        BEGSR
+     C                   EVAL      W#PRICE = I_UNITPRC
+     C                   MONITOR
+     C                   EVAL      W#ODATE = %DEC(ORDDATE:8:0)
+     C                   ON-ERROR
+     C                   EVAL      W#ODATE = %DEC(%DATE():*ISO)
+     C                   ENDMON
+     C/EXEC SQL
+     C+   SELECT P.UNITPRC INTO :W#PRICE FROM PRICEP P
+     C+    WHERE P.ITEMID = :W#ITEMID AND P.CUSTID IN (:W#CUSTID, 0)
+     C+      AND P.MINQTY <= :ORDQTY AND P.FROMDATE <= :W#ODATE
+     C+      AND (P.TODATE = 0 OR P.TODATE >= :W#ODATE)
+     C+    ORDER BY CASE WHEN P.CUSTID = 0 THEN 1 ELSE 0 END,
+     C+          P.MINQTY DESC, P.FROMDATE DESC
+     C+    FETCH FIRST 1 ROW ONLY
+     C/END-EXEC
+     C                   IF        SQLCODE <> 0
+     C                   EVAL      W#PRICE = I_UNITPRC
+     C                   ENDIF
+     C                   ENDSR
+
+     C*===============================================================
+     C* 修正#INV2 @LINETAX - 明細の税率(W#LNRATE)
+     C*   顧客が非課税・輸出免税なら0。それ以外は商品の税区分
+     C*   (REDUCED=8% STANDARD=10% EXEMPT/EXPORT=0)、空白は顧客の税率
+     C*   I_ は @VALIDDET で読んだ商品
+     C*===============================================================
+     C     @LINETAX      BEGSR
+     C                   SELECT
+     C                   WHEN      W#CUSTCAT = 'EXEMPT' OR
+     C                             W#CUSTCAT = 'EXPORT'
+     C                   EVAL      W#LNRATE = 0
+     C                   WHEN      I_TAXCAT = 'REDUCED'
+     C                   EVAL      W#LNRATE = 0.080
+     C                   WHEN      I_TAXCAT = 'EXEMPT' OR
+     C                             I_TAXCAT = 'EXPORT'
+     C                   EVAL      W#LNRATE = 0
+     C                   WHEN      I_TAXCAT = 'STANDARD'
+     C                   EVAL      W#LNRATE = 0.100
+     C                   OTHER
+     C                   EVAL      W#LNRATE = W#TAXRATE
+     C                   ENDSL
      C                   ENDSR
 
      C*===============================================================
@@ -1296,9 +1368,7 @@
      C                   IF        NOT *IN99
      C                   EVAL      W#ITEMID = I_ITEMID
      C                   EVAL      ITEMNM = DbcsTrunc(I_ITEMDSC:22)
-     C                   IF        UNITPRC = 0
-     C                   EVAL      UNITPRC = I_UNITPRC
-     C                   ENDIF
+      * 修正#PRC2 単価は確定時に決める(顧客別単価・数量割引)
      C                   ENDIF
      C                   LEAVE
      C                   ENDIF

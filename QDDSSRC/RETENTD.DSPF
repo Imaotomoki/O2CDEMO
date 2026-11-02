@@ -1,0 +1,86 @@
+     A* ==========================================================
+     A* RETENTD - 返品・値引き(赤伝)の画面
+     A* 修正#RET: 新規作成。RETENTRY から使う
+     A*   全角の定数の直後は1桁空けて項目を置く(SIと属性桁の重なり防止)
+     A* ==========================================================
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      CA03(03 'F3=終了')
+     A                                      CF04(04 'F4=検索')
+     A                                      CF06(06 'F6=作成')
+     A                                      CA12(12 'F12=戻る')
+     A                                      PRINT
+     A* ---- RSFL - 元の請求書の明細 ----
+     A          R RSFL                      SFL
+     A            LLINE          3A  O  7  2
+     A            LITEM         12A  O  7  6COLOR(GRN)
+     A            LNAME         16A  O  7 19
+     A            LQTY           7A  O  7 36
+     A            LRET           7A  O  7 44
+     A            LPRC          10A  O  7 52
+     A            RQTY           6Y 0B  7 63EDTCDE(Z)
+     A                                      DSPATR(UL)
+     A  41                                  DSPATR(RI PC)
+     A            RAMT           9Y 2B  7 70EDTCDE(3)
+     A                                      DSPATR(UL)
+     A  42                                  DSPATR(RI PC)
+     A            LORGLN         9S 0H
+     A            LITEMID        9S 0H
+     A            LQTYV          9S 0H
+     A            LRETV          9S 0H
+     A            LPRCV         15S 4H
+     A            LAMTV         15S 2H
+     A            LTAXR          5S 3H
+     A          R RCTL                      SFLCTL(RSFL)
+     A                                      SFLSIZ(0099)
+     A                                      SFLPAG(0012)
+     A  91                                  SFLDSP
+     A  92                                  SFLDSPCTL
+     A  93                                  SFLCLR
+     A  94                                  SFLEND(*MORE)
+     A                                      OVERLAY
+     A                                      RTNCSRLOC(&CSRRCD &CSRFLD)
+     A            CSRRCD        10A  H
+     A            CSRFLD        10A  H
+     A                                  1  2'返品・値引き(赤伝)'
+     A                                      DSPATR(HI)
+     A                                  1 70DATE(*SYS) EDTCDE(Y)
+     A                                  3  2'請求番号'
+     A            DINV          20A  B  3 13DSPATR(UL)
+     A  31                                  DSPATR(RI PC)
+     A                                  3 36'区分'
+     A            DTYPE          1A  B  3 43DSPATR(UL)
+     A                                      VALUES('1' '2')
+     A                                  3 46'(1=返品 2=値引き)'
+     A                                      COLOR(BLU)
+     A                                  4  2'顧客'
+     A            DCUST         36A  O  4  9COLOR(TRQ)
+     A                                  4 46'通貨'
+     A            DCUR           3A  O  4 53COLOR(TRQ)
+     A                                  4 58'残高'
+     A            DBAL          14A  O  4 65COLOR(TRQ)
+     A                                  5  2'理由'
+     A            DREASON       40O  B  5  9DSPATR(UL)
+     A                                  5 51'戻す倉庫'
+     A            DWHCD         10A  B  5 62DSPATR(UL)
+     A  32                                  DSPATR(RI PC)
+     A                                  6  2'行'
+     A                                  6  7'商品'
+     A                                  6 19'品名'
+     A                                  6 36'請求数'
+     A                                  6 45'返品済'
+     A                                  6 55'単価'
+     A                                  6 63'返品数'
+     A                                  6 73'値引額'
+     A* ---- RFOOT - 合計とメッセージ ----
+     A          R RFOOT
+     A                                 20  2'赤伝  税抜'
+     A            DSUB          15A  O 20 17
+     A                                 20 33'消費税'
+     A            DTAX          15A  O 20 42
+     A                                 20 58'合計'
+     A            DTOT          15A  O 20 65DSPATR(HI)
+     A            DMSG          78A  O 22  2COLOR(RED)
+     A                                 23  2'Enter=計算  F4=検索'
+     A                                      COLOR(BLU)
+     A                                 23 27'F6=赤伝を作成  F3=終了'
+     A                                      COLOR(BLU)

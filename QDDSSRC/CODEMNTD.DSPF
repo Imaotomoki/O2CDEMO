@@ -1,0 +1,93 @@
+     A* ==========================================================
+     A* CODEMNTD - コードマスターの保守の画面
+     A* 修正#MST: 新規作成。CODEMNT から使う
+     A*   全角の定数の直後は1桁空けて項目を置く(SIと属性桁の重なり防止)
+     A* ==========================================================
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      CA03(03 'F3=終了')
+     A                                      CF06(06 'F6=新規')
+     A                                      CA12(12 'F12=戻る')
+     A                                      PRINT
+     A* ---- LSFL - コードの一覧 ----
+     A          R LSFL                      SFL
+     A            LOPT           1A  B  7  2DSPATR(UL)
+     A                                      VALUES(' ' '2' '4')
+     A            LTYPE         14A  O  7  4COLOR(GRN)
+     A            LVAL          16A  O  7 19
+     A            LDESC         30A  O  7 36
+     A            LORD           5A  O  7 67
+     A            LACT           6A  O  7 74
+     A  61                                  COLOR(RED)
+     A            LTYPEH        30A  H
+     A            LVALH         30A  H
+     A          R LCTL                      SFLCTL(LSFL)
+     A                                      SFLSIZ(0999)
+     A                                      SFLPAG(0014)
+     A  91                                  SFLDSP
+     A  92                                  SFLDSPCTL
+     A  93                                  SFLCLR
+     A  94                                  SFLEND(*MORE)
+     A                                      OVERLAY
+     A                                  1  2'コードマスターの保守'
+     A                                      DSPATR(HI)
+     A                                  1 70DATE(*SYS) EDTCDE(Y)
+     A                                  3  2'コード種別'
+     A            LFTYPE        30A  B  3 16DSPATR(UL)
+     A                                  3 48'(空白=全部)'
+     A                                      COLOR(BLU)
+     A                                  4  2'2=変更 4=有効・無効'
+     A                                      COLOR(BLU)
+     A                                  4 30'F6=新規  Enter=検索'
+     A                                      COLOR(BLU)
+     A                                  6  4'種別'
+     A                                  6 19'コード'
+     A                                  6 36'説明'
+     A                                  6 67'順'
+     A                                  6 74'有効'
+     A* ---- LFOOT ----
+     A          R LFOOT
+     A            LMSG          78A  O 22  2COLOR(RED)
+     A                                 23  2'F3=終了  F6=新規'
+     A                                      COLOR(BLU)
+     A* ---- DTL - 登録・変更 ----
+     A          R DTL
+     A            DMODE         20A  O  1  2DSPATR(HI)
+     A                                  1 70DATE(*SYS) EDTCDE(Y)
+     A                                  3  2'コード種別'
+     A            DTYPE         30A  B  3 18DSPATR(UL)
+     A  50                                  DSPATR(PR)
+     A  31                                  DSPATR(RI PC)
+     A                                  4  2'コード'
+     A            DVAL          30A  B  4 18DSPATR(UL)
+     A  50                                  DSPATR(PR)
+     A  32                                  DSPATR(RI PC)
+     A                                  5  2'説明'
+     A            DDESC         60O  B  5 18DSPATR(UL)
+     A  33                                  DSPATR(RI PC)
+     A                                  6  2'表示順'
+     A            DORD           5Y 0B  6 18EDTCDE(Z)
+     A                                      DSPATR(UL)
+     A                                  7  2'有効'
+     A            DACT           1A  B  7 18DSPATR(UL)
+     A                                      VALUES('Y' 'N')
+     A                                  7 22'(Y=有効 N=無効)'
+     A                                      COLOR(BLU)
+     A                                  9  2'主な種別'
+     A                                      COLOR(BLU)
+     A                                 10  4'CURRENCY=通貨'
+     A                                      COLOR(BLU)
+     A                                 10 24'PAYMENT_TERM=支払条件'
+     A                                      COLOR(BLU)
+     A                                 10 52'PAY_METHOD=入金方法'
+     A                                      COLOR(BLU)
+     A                                 11  4'TAX_CAT=税区分'
+     A                                      COLOR(BLU)
+     A                                 11 24'SUPPLIER=仕入先'
+     A                                      COLOR(BLU)
+     A                                 12  4'COMPANY=自社情報(REGNO'
+     A                                      COLOR(BLU)
+     A                                 12 29'=登録番号 NAME=社名)'
+     A                                      COLOR(BLU)
+     A            DMSG          78A  O 22  2COLOR(RED)
+     A                                 23  2'Enter=登録  F12=戻る'
+     A                                      COLOR(BLU)

@@ -1,0 +1,28 @@
+      *===============================================================
+      * 物理ファイル: RETURNP (返品・値引きの明細)
+      * 修正#RET: 新規作成。RETENTRY で赤伝(マイナスの請求書)を
+      *   作るとき、元の請求書の明細と赤伝の明細の対応を記録する
+      *   採番: O2C_RETID_SEQ
+      *===============================================================
+     A                                      UNIQUE
+     A          R RETREC
+     A                                      TEXT('返品・値引き明細')
+     A            RETID         18P 0       COLHDG('返品ID')
+     A            CNINVID       18P 0       COLHDG('赤伝ID')
+     A                                      TEXT('赤伝の請求ID')
+     A            ORGINVID      18P 0       COLHDG('元請求ID')
+     A            ORGLINE        9P 0       COLHDG('元明細行')
+     A            ITEMID         9P 0       COLHDG('商品ID')
+     A            RETTYPE        1A         COLHDG('区分')
+     A                                      TEXT('1=返品 2=値引き')
+     A            RETQTY        15P 3       COLHDG('返品数')
+     A            RETAMT        15P 2       COLHDG('金額(税抜)')
+     A            TAXRATE        5P 3       COLHDG('税率')
+     A            WHID           4P 0       COLHDG('倉庫ID')
+     A                                      TEXT('在庫を戻した倉庫')
+     A            RETDATE        8P 0       COLHDG('返品日')
+     A            REASON        60O         COLHDG('理由')
+     A            CRTUSER       30O         COLHDG('作成者')
+     A            CRTDATE        8P 0       COLHDG('作成日')
+     A            CRTTIM         6P 0       COLHDG('作成時刻')
+     A          K RETID

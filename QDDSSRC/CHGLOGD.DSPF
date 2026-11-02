@@ -1,0 +1,70 @@
+     A* ==========================================================
+     A* CHGLOGD - 変更履歴の照会の画面
+     A* 修正#LOG: 新規作成。CHGLOGINQ から使う
+     A*   全角の定数の直後は1桁空けて項目を置く(SIと属性桁の重なり防止)
+     A* ==========================================================
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      CA03(03 'F3=終了')
+     A                                      CA12(12 'F12=戻る')
+     A                                      PRINT
+     A          R LSFL                      SFL
+     A            LOPT           1A  B  7  2DSPATR(UL)
+     A                                      VALUES(' ' '5')
+     A            LAT           16A  O  7  4
+     A            LTBL          10A  O  7 21COLOR(GRN)
+     A            LKEY          20A  O  7 32
+     A            LACT           6A  O  7 53
+     A            LUSR          10A  O  7 60
+     A            LID           18S 0H
+     A          R LCTL                      SFLCTL(LSFL)
+     A                                      SFLSIZ(0999)
+     A                                      SFLPAG(0014)
+     A  91                                  SFLDSP
+     A                                      SFLDSPCTL
+     A  93                                  SFLCLR
+     A  94                                  SFLEND(*MORE)
+     A                                      OVERLAY
+     A                                  1  2'変更履歴の照会'
+     A                                      DSPATR(HI)
+     A                                  1 70DATE(*SYS) EDTCDE(Y)
+     A                                  3  2'ファイル'
+     A            LFTBL         10A  B  3 13DSPATR(UL)
+     A                                  3 25'番号'
+     A            LFKEY         20A  B  3 32DSPATR(UL)
+     A                                      CHECK(LC)
+     A                                  4  2'(空白=全部。番号は前方一致'
+     A                                      COLOR(BLU)
+     A                                  4 34'例: SO- INV-122 PAY-)'
+     A                                      COLOR(BLU)
+     A                                  5  2'5=内容を表示  新しい順'
+     A                                      COLOR(BLU)
+     A                                  6  4'日時'
+     A                                  6 21'ファイル'
+     A                                  6 32'番号'
+     A                                  6 53'操作'
+     A                                  6 60'変更者'
+     A          R LFOOT
+     A            LMSG          78A  O 22  2COLOR(RED)
+     A                                 23  2'Enter=検索 F3=終了'
+     A                                      COLOR(BLU)
+     A          R DTL
+     A                                  1  2'変更履歴の内容'
+     A                                      DSPATR(HI)
+     A                                  3  2'日時'
+     A            DAT           26A  O  3 12
+     A                                  4  2'ファイル'
+     A            DTBL          10A  O  4 13COLOR(GRN)
+     A                                  4 25'番号'
+     A            DKEY          30A  O  4 32
+     A                                  5  2'操作'
+     A            DACT          10A  O  5 12
+     A                                  5 25'変更者'
+     A            DUSR          10A  O  5 34
+     A                                  7  2'変更前'
+     A            DOLD1         78A  O  8  2
+     A            DOLD2         78A  O  9  2
+     A                                 11  2'変更後'
+     A            DNEW1         78A  O 12  2COLOR(TRQ)
+     A            DNEW2         78A  O 13  2COLOR(TRQ)
+     A                                 23  2'Enter・F12=戻る'
+     A                                      COLOR(BLU)

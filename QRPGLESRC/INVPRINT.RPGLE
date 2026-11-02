@@ -7,6 +7,9 @@
       *   - 再印刷: CALL INVPRINT PARM('INV-23')
       *   - 税率別の対象額と消費税額を出力(インボイス制度)
       *   修正#CUR 外貨の請求書は金額を小数2桁で印字(50=外貨)
+      *   修正#INV2 適格請求書: 発行者と登録番号(COMPANY)を印字。
+      *   修正#RET 赤伝(マイナス)は表題を変え、金額にマイナスを付ける
+      *            軽減税率(8%)の明細に※を付ける
       *            税率0%も0と印字する
       *=====================================================================
      FINVPRTF   O    E             PRINTER OFLIND(*IN90)
@@ -14,6 +17,8 @@
      FINVOICELP IF   E           K DISK    PREFIX(L_)
      FCUSTOMERP IF   E           K DISK    PREFIX(C_)
      FITEMP     IF   E           K DISK    PREFIX(I_)
+      * 修正#INV2 自社情報(COMPANY: NAME=社名 REGNO=登録番号)
+     FCODEMSTRP IF   E           K DISK    PREFIX(CD_)
 
      D P#INVNUM        S             20A
      D W#INVNUM        S             20A
@@ -24,6 +29,8 @@
      D W#D8            S              8A
       * 修正#CUR: 税率別の消費税額(外貨は小数2桁で切り捨て)
      D W#TXAMT         S             15P 2
+     D W#CDTYPE        S             30A
+     D W#CDVAL         S             30A
      D W#ESCMSG        S             52A
      D W#MSGKEY        S              4A
      D W#APIERR        DS
@@ -45,6 +52,9 @@
      D   pStr                       256A   VARYING CONST
      D   pMax                        10I 0 CONST
 
+     C     CDKEY         KLIST
+     C                   KFLD                    W#CDTYPE
+     C                   KFLD                    W#CDVAL
      C     *ENTRY        PLIST
      C                   PARM                    P#INVNUM
 
@@ -71,6 +81,8 @@
       * 修正#CUR: 外貨は金額を小数2桁の文字で印字する
      C                   EVAL      *IN50 = (CURRCD <> 'JPY' AND
      C                             CURRCD <> *BLANKS)
+      * 修正#RET 赤伝(合計がマイナス)は表題を変える
+     C                   EVAL      *IN52 = (TOTAMT < 0)
       * 見出し(顧客・請求番号・日付)
      C     CUSTID        CHAIN     CUSTOMERP
      C                   IF        %FOUND(CUSTOMERP)
@@ -88,6 +100,22 @@
      C                   EVAL      PDUEDT = %SUBST(W#D8:1:4) + '/' +
      C                             %SUBST(W#D8:5:2) + '/' + %SUBST(W#D8:7:2)
      C                   EVAL      PCURRCD = CURRCD
+      * 修正#INV2 適格請求書: 発行者(社名)と登録番号
+     C                   EVAL      W#CDTYPE = 'COMPANY'
+     C                   EVAL      W#CDVAL = 'NAME'
+     C     CDKEY         CHAIN     CODEREC
+     C                   IF        %FOUND(CODEMSTRP)
+     C                   EVAL      PCOMPNM = DbcsTrunc(CD_DESC:40)
+     C                   ELSE
+     C                   EVAL      PCOMPNM = *BLANKS
+     C                   ENDIF
+     C                   EVAL      W#CDVAL = 'REGNO'
+     C     CDKEY         CHAIN     CODEREC
+     C                   IF        %FOUND(CODEMSTRP)
+     C                   EVAL      PREGNO = CD_DESC
+     C                   ELSE
+     C                   EVAL      PREGNO = '(未登録)'
+     C                   ENDIF
      C                   WRITE     PHEAD
 
       * 明細
@@ -115,16 +143,18 @@
      C                   EVAL(H)   PLINEAMT = L_LINEAMT
       * 修正#OVF 桁に収まらない金額・数量は*で表示(異常終了していた)
      C                   MONITOR
-     C                   EVALR     PUNITPRCF = %EDITC(%DEC(L_UNITPRC:11:2):'1')
+     C                   EVALR     PUNITPRCF = %EDITC(%DEC(L_UNITPRC:11:2):'J')
      C                   ON-ERROR
      C                   EVAL      PUNITPRCF = *ALL'*'
      C                   ENDMON
      C                   MONITOR
-     C                   EVALR     PLINEAMTF = %EDITC(%DEC(L_LINEAMT:13:2):'1')
+     C                   EVALR     PLINEAMTF = %EDITC(%DEC(L_LINEAMT:13:2):'J')
      C                   ON-ERROR
      C                   EVAL      PLINEAMTF = *ALL'*'
      C                   ENDMON
      C                   EVAL(H)   PTAXPCT = L_TAXRATE * 100
+      * 修正#INV2 軽減税率(8%)の明細に※
+     C                   EVAL      *IN51 = (L_TAXRATE = 0.080)
      C                   WRITE     PDETAIL
       * 税率別に税抜金額を集計
      C                   EVAL      W#K = 1
@@ -157,9 +187,9 @@
      C                   ENDIF
      C                   EVAL      PTXAMT = W#TXAMT
      C                   EVALR     PTXBASEF = %EDITC(%DEC(W#TXBASE(W#K):
-     C                             13:2):'1')
+     C                             13:2):'J')
      C                   MONITOR
-     C                   EVALR     PTXAMTF = %EDITC(%DEC(W#TXAMT:13:2):'1')
+     C                   EVALR     PTXAMTF = %EDITC(%DEC(W#TXAMT:13:2):'J')
      C                   ON-ERROR
      C                   EVAL      PTXAMTF = *ALL'*'
      C                   ENDMON
@@ -172,17 +202,17 @@
      C                   EVAL(H)   PTAXAMT = TAXAMT
      C                   EVAL(H)   PTOTAMT = TOTAMT
      C                   MONITOR
-     C                   EVALR     PSUBTOTF = %EDITC(%DEC(SUBTOT:13:2):'1')
+     C                   EVALR     PSUBTOTF = %EDITC(%DEC(SUBTOT:13:2):'J')
      C                   ON-ERROR
      C                   EVAL      PSUBTOTF = *ALL'*'
      C                   ENDMON
      C                   MONITOR
-     C                   EVALR     PTAXAMTF = %EDITC(%DEC(TAXAMT:13:2):'1')
+     C                   EVALR     PTAXAMTF = %EDITC(%DEC(TAXAMT:13:2):'J')
      C                   ON-ERROR
      C                   EVAL      PTAXAMTF = *ALL'*'
      C                   ENDMON
      C                   MONITOR
-     C                   EVALR     PTOTAMTF = %EDITC(%DEC(TOTAMT:13:2):'1')
+     C                   EVALR     PTOTAMTF = %EDITC(%DEC(TOTAMT:13:2):'J')
      C                   ON-ERROR
      C                   EVAL      PTOTAMTF = *ALL'*'
      C                   ENDMON

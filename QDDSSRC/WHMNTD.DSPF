@@ -1,0 +1,64 @@
+     A* ==========================================================
+     A* WHMNTD - 倉庫マスターの保守の画面
+     A* 修正#MST: 新規作成。WHMNT から使う
+     A*   全角の定数の直後は1桁空けて項目を置く(SIと属性桁の重なり防止)
+     A* ==========================================================
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      CA03(03 'F3=終了')
+     A                                      CF06(06 'F6=新規')
+     A                                      CA12(12 'F12=戻る')
+     A                                      PRINT
+     A* ---- LSFL - 倉庫の一覧 ----
+     A          R LSFL                      SFL
+     A            LOPT           1A  B  7  2DSPATR(UL)
+     A                                      VALUES(' ' '2' '4')
+     A            LWH           10A  O  7  4COLOR(GRN)
+     A            LNAME         30A  O  7 17
+     A            LMGR          20A  O  7 48
+     A            LSTS           8A  O  7 70
+     A  61                                  COLOR(RED)
+     A            LWHID          4S 0H
+     A          R LCTL                      SFLCTL(LSFL)
+     A                                      SFLSIZ(0999)
+     A                                      SFLPAG(0014)
+     A  91                                  SFLDSP
+     A  92                                  SFLDSPCTL
+     A  93                                  SFLCLR
+     A  94                                  SFLEND(*MORE)
+     A                                      OVERLAY
+     A                                  1  2'倉庫マスターの保守'
+     A                                      DSPATR(HI)
+     A                                  1 70DATE(*SYS) EDTCDE(Y)
+     A                                  4  2'2=変更 4=停止・再開'
+     A                                      COLOR(BLU)
+     A                                  4 30'F6=新規'
+     A                                      COLOR(BLU)
+     A                                  6  4'倉庫コード'
+     A                                  6 17'倉庫名'
+     A                                  6 48'責任者'
+     A                                  6 70'状態'
+     A* ---- LFOOT ----
+     A          R LFOOT
+     A            LMSG          78A  O 22  2COLOR(RED)
+     A                                 23  2'F3=終了  F6=新規'
+     A                                      COLOR(BLU)
+     A* ---- DTL - 登録・変更 ----
+     A          R DTL
+     A            DMODE         20A  O  1  2DSPATR(HI)
+     A                                  1 70DATE(*SYS) EDTCDE(Y)
+     A                                  3  2'倉庫コード'
+     A            DWHCD         10A  B  3 18DSPATR(UL)
+     A  50                                  DSPATR(PR)
+     A  31                                  DSPATR(RI PC)
+     A                                  4  2'倉庫名'
+     A            DWHNM         60O  B  4 18DSPATR(UL)
+     A  32                                  DSPATR(RI PC)
+     A                                  5  2'住所'
+     A            DWHADR        60O  B  5 18DSPATR(UL)
+     A                                  6  2'責任者'
+     A            DMGR          60O  B  6 18DSPATR(UL)
+     A                                  8  2'状態'
+     A            DSTS          10A  O  8 18COLOR(TRQ)
+     A            DMSG          78A  O 22  2COLOR(RED)
+     A                                 23  2'Enter=登録  F12=戻る'
+     A                                      COLOR(BLU)

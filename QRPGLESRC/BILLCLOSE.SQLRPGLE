@@ -53,6 +53,7 @@
      D W#ICNT          S              5P 0
      D W#CNM           S             60A
      D W#CADR          S             60A
+     D W#CDESC         S            120A
       * 顧客一覧の取り出し先
      D C#ROW           DS
      D C#CUSTID                       9P 0
@@ -487,6 +488,22 @@
      C                   EVAL      PCURH = W#CUR
      C                   EVAL      PCUSTNM = W#CNM
      C                   EVAL      PBILLADR = W#CADR
+      * 修正#INV2 適格請求書: 発行者(社名)と登録番号(COMPANY)
+     C                   EVAL      W#CDESC = *BLANKS
+     C/EXEC SQL
+     C+   SELECT CAST(DESC AS VARCHAR(120) FOR BIT DATA) INTO :W#CDESC
+     C+     FROM CODEMSTRP WHERE CODETYPE = 'COMPANY' AND CODEVAL = 'NAME'
+     C/END-EXEC
+     C                   EVAL      PCOMPNM = DbcsTrunc(%TRIMR(W#CDESC):40)
+     C                   EVAL      W#CDESC = *BLANKS
+     C/EXEC SQL
+     C+   SELECT CAST(DESC AS VARCHAR(120) FOR BIT DATA) INTO :W#CDESC
+     C+     FROM CODEMSTRP WHERE CODETYPE = 'COMPANY' AND CODEVAL = 'REGNO'
+     C/END-EXEC
+     C                   EVAL      PREGNO = W#CDESC
+     C                   IF        PREGNO = *BLANKS
+     C                   EVAL      PREGNO = '(未登録)'
+     C                   ENDIF
      C                   IF        W#LASTCLS > 0
      C                   EVAL      W#DT = %DATE(W#LASTCLS:*ISO) + %DAYS(1)
      C                   EVAL      PFROM = FmtDate(%DEC(W#DT:*ISO))

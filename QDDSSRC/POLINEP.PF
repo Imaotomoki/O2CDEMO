@@ -1,0 +1,16 @@
+      *===============================================================
+      * 物理ファイル: POLINEP (発注明細)
+      * 修正#PO: 新規作成。入荷数は POENTRY の入荷で増える
+      *===============================================================
+     A                                      UNIQUE
+     A          R POLREC
+     A                                      TEXT('発注明細')
+     A            POID          18P 0       COLHDG('発注ID')
+     A            LINENO         9P 0       COLHDG('行番号')
+     A            ITEMID         9P 0       COLHDG('商品ID')
+     A            ORDQTY        15P 3       COLHDG('発注数')
+     A            RCVQTY        15P 3       COLHDG('入荷数')
+     A            UNITCOST      15P 4       COLHDG('仕入単価')
+     A            LINEAMT       15P 2       COLHDG('金額(税抜)')
+     A          K POID
+     A          K LINENO

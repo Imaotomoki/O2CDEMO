@@ -1,0 +1,26 @@
+      *===============================================================
+      * 物理ファイル: PRICEP (顧客別単価・数量割引)
+      * 修正#PRC2: 新規作成。PRICEMNT で保守し、受注入力で単価が
+      *   空白のときに使う。顧客ID 0 は全顧客向け
+      *   採番: O2C_PRICEID_SEQ
+      *===============================================================
+     A                                      UNIQUE
+     A          R PRCREC
+     A                                      TEXT('顧客別単価')
+     A            PRICEID       18P 0       COLHDG('単価ID')
+     A            CUSTID         9P 0       COLHDG('顧客ID')
+     A                                      TEXT('顧客ID(0=全顧客)')
+     A            ITEMID         9P 0       COLHDG('商品ID')
+     A            MINQTY        15P 3       COLHDG('最低数量')
+     A                                      TEXT('この数量以上で適用')
+     A            FROMDATE       8P 0       COLHDG('開始日')
+     A            TODATE         8P 0       COLHDG('終了日')
+     A                                      TEXT('終了日(0=無期限)')
+     A            UNITPRC       15P 4       COLHDG('単価')
+     A            CRTUSER       30O         COLHDG('作成者')
+     A            CRTDATE        8P 0       COLHDG('作成日')
+     A            CRTTIM         6P 0       COLHDG('作成時刻')
+     A            UPDUSER       30O         COLHDG('更新者')
+     A            UPDDATE        8P 0       COLHDG('更新日')
+     A            UPDTIM         6P 0       COLHDG('更新時刻')
+     A          K PRICEID
