@@ -35,8 +35,16 @@ CALL O2CDEMO/O2CMENU
 | 14 | 顧客の与信・残高照会 | `CUSTINQ` | `CUSTINQD` |
 | 15 | データ整合性チェック | `CHKDATA` | `CHKDATAD` |
 | 16 | 出荷予定（未出荷の受注） | `SHPDUE` | `SHPDUED` |
+| 17 | マスター保守（顧客・商品・倉庫・為替レート・コード・顧客別単価・メニュー権限・変更履歴） | `MSTMENU` → `CUSTMNT` `ITEMMNT` `WHMNT` `FXMNT` `CODEMNT` `PRICEMNT` `USERMNT` `CHGLOGINQ` | `MSTMNUD` ほか |
+| 18 | 見積入力・受注への変換 | `QUOTENT`（変換は `CREATESORD`） | `QUOTENTD` |
+| 19 | 返品・値引き（赤伝） | `RETENTRY` | `RETENTD` / `INVPRTF` |
+| 20 | 入金データの取込・消込 | `PAYIMP` | `PAYIMPD` |
+| 21 | 発注点・発注・入荷 | `POENTRY` | `POENTRYD` |
+| 22 | 倉庫間の在庫移動 | `STKXFER` | `STKXFERD` |
+| 23 | 粗利分析（顧客・商品別） | `MARGIN` | `MARGIND` |
+| 24 | 会計仕訳データの出力 | `GLEXPORT` | `GLEXPD` |
 
-F3 でメニューを終了します。
+F3 でメニューを終了します。メニューとマスター保守メニューは、ユーザーの権限（`CHKAUTH`）を確認してから各機能を呼びます。
 
 受注日・入金日の初期値と画面右上の日付は、システムの日付（今日）です。日をまたいでサインオンしたままでも、前日の日付にはなりません。
 
@@ -48,13 +56,13 @@ F3 でメニューを終了します。
 |---|---|
 | メニュー | 請求番号（選ぶと選択が 5=照会 になる） |
 | 請求書照会 | 請求番号（選ぶとすぐ照会画面を表示） |
-
-請求書の検索ウィンドウには「絞込」欄があります（空白=取消以外、1=未収、2=期限超過、9=全部）。名称の前に状態（未収・入金済・期限超過・取消）を表示し、顧客コードの前方一致でも検索できます。並びは請求日の新しい順です。
-
 | 受注入力 | 顧客、倉庫、通貨、支払条件、商品（明細） |
 | 入金処理 | 顧客、入金方法、通貨 |
 | 在庫入庫・棚卸 | 倉庫、商品 |
 | 売掛金年齢表 | 顧客 |
+| 見積・返品・入金データ・発注・在庫移動・マスター保守 | 顧客・商品・倉庫・請求番号・税区分・仕入先など、その画面のコード |
+
+請求書の検索ウィンドウには「絞込」欄があります（空白=取消以外、1=未収、2=期限超過、9=全部）。名称の前に状態（未収・入金済・期限超過・取消）を表示し、顧客コードの前方一致でも検索できます。並びは請求日の新しい順です。
 
 通貨（`CURRENCY`）・支払条件（`PAYMENT_TERM`）・入金方法（`PAY_METHOD`）は `CODEMSTRP` に登録されているものだけを受け付けます。呼び出した処理でエラーが起きてもメニューは止まらず、メッセージ行に表示されます（詳細はジョブログ）。
 
@@ -180,7 +188,8 @@ F3 でメニューを終了します。
 | 対象 | コード | 意味（受注は画面の表示名） |
 |---|---|---|
 | 受注 | `OPEN` / `ALLOCATED` / `PARTIAL` / `SHIPPED` / `INVOICED` / `CANCELLED` | 受注済 / 引当済 / 一部出荷 / 出荷済 / 請求済 / キャンセル |
-| 請求書 | `OPEN` / `PARTIAL` / `PAID` | 入金なし / 一部入金 / 全額入金 |
+| 出荷 | `SHIPPED` / `INVOICED` / `CANCELLED` | 出荷済（未請求） / 請求済 / 取消済 |
+| 請求書 | `OPEN` / `PARTIAL` / `PAID` / `CANCELLED` | 入金なし / 一部入金 / 全額入金 / 取消済 |
 | 入金 | `APPLIED` / `UNAPPLIED` / `CANCELLED` | 消込済 / 前受金あり（未充当） / 取消 |
 | 見積 | `OPEN` / `ORDERED` / `CANCELLED` | 未受注 / 受注済 / 取消 |
 | 発注 | `OPEN` / `PARTIAL` / `RECEIVED` / `CANCELLED` | 発注済 / 一部入荷 / 入荷済 / 取消 |
@@ -201,7 +210,7 @@ F3 でメニューを終了します。
 | `INVOICEHP` / `INVOICELP` | 請求ヘッダー / 明細 | `O2C_INVID_SEQ` |
 | `PAYMENTP` | 入金 | `O2C_PAYID_SEQ` |
 | `PAYAPPLYP` | 入金の消込明細 | `O2C_APPLYID_SEQ` |
-| `CHANGELOGP` | 変更ログ（トリガー `INVTRIGGER`。コミットメント制御下の在庫更新は同じトランザクションで記録し、取り消されたらログも残らない） | `O2C_LOGID_SEQ` |
+| `CHANGELOGP` | 変更ログ（受注・請求書・入金は SQL トリガー `O2CTRIG`、在庫はトリガー `INVTRIGGER`。コミットメント制御下の在庫更新は同じトランザクションで記録し、取り消されたらログも残らない） | `O2C_LOGID_SEQ` |
 | `DUNNINGP` | 督促履歴 | `O2C_DUNID_SEQ` |
 | `STKMOVEP` | 在庫移動履歴 | `O2C_MOVID_SEQ` |
 | `CUSTCLSP` | 顧客締日 | |
@@ -268,12 +277,30 @@ F3 でメニューを終了します。
 
 | ソースタイプ | コンパイル |
 |---|---|
-| `SQLRPGLE`（`ARAGING` `BILLCLOSE` `DUNNING` `STKMAINT` `CREATEINV` `CREATESORD` `CONFIRMSHP` `INVTRIGGER` `ORDERENTRY` `PAYENTRY`） | `CRTSQLRPGI OBJTYPE(*PGM) CLOSQLCSR(*ENDMOD)` |
-| `RPGLE`（`CNFSHPENT` `ORDMAINT` `INVPRINT` `INVINQ` ほか初期データ投入） | `CRTBNDRPG` |
-| `CLLE`（`O2CMENU` `CNFSHPCL` `CRTINVCL` ほか） | `CRTBNDCL` |
+| `SQLRPGLE`（下の `RPGLE` 以外の RPG すべて。`ORDERENTRY` `PAYENTRY` `CONFIRMSHP` `CREATEINV` `CREATESORD` `INVTRIGGER` `O2CPRMPT` `CHKAUTH` `NIGHTBAT` など） | `CRTSQLRPGI OBJTYPE(*PGM) CLOSQLCSR(*ENDMOD)` |
+| `RPGLE`（`ORDMAINT` `CNFSHPENT` `INVPRINT` `INVINQ` `CODEMNT` と、初期データ投入の `INITxxx`） | `CRTBNDRPG` |
+| `CLLE`（`O2CMENU` `MSTMENU` `CNFSHPCL` `CRTINVCL` `NIGHTCL` と、セットアップ用の CL） | `CRTBNDCL` |
 | `DSPF` / `PRTF` | `CRTDSPF` / `CRTPRTF` |
+| `SQL`（`QSQLSRC` の `O2CTRIG`） | `RUNSQLSTM`（`CRTFILES` が実行する） |
+
+このリポジトリーのファイルの拡張子は、IBM i のソースタイプと違うものがあります（例 `ORDERENTRY.RPGLE` は IBM i では `SQLRPGLE`）。メンバーを置くときは、上の表と `COMPBIZ` のソースタイプに合わせてください。
 
 `COMPBIZ` が使うコマンドは次のとおりです（1 本ずつ手でコンパイルするときも同じ）。
+
+```
+CRTDSPF    FILE(O2CDEMO/xxx) SRCFILE(O2CDEMO/QDDSSRC) SRCMBR(xxx) REPLACE(*YES)
+CRTPRTF    FILE(O2CDEMO/xxx) SRCFILE(O2CDEMO/QDDSSRC) SRCMBR(xxx) REPLACE(*YES)
+CRTSQLRPGI OBJ(O2CDEMO/xxx) SRCFILE(O2CDEMO/QRPGLESRC) SRCMBR(xxx) +
+             OBJTYPE(*PGM) CLOSQLCSR(*ENDMOD) DBGVIEW(*SOURCE) REPLACE(*YES)
+CRTBNDRPG  PGM(O2CDEMO/xxx) SRCFILE(O2CDEMO/QRPGLESRC) SRCMBR(xxx) +
+             DBGVIEW(*SOURCE) REPLACE(*YES)
+CRTBNDCL   PGM(O2CDEMO/xxx) SRCFILE(O2CDEMO/QCLLESRC) SRCMBR(xxx) +
+             DBGVIEW(*SOURCE) REPLACE(*YES)
+ADDPFTRG   FILE(O2CDEMO/INVENTORYP) TRGTIME(*AFTER) TRGEVENT(*UPDATE) +
+             PGM(O2CDEMO/INVTRIGGER) TRGUPDCND(*CHANGE)
+```
+
+1 本でも失敗すると、`COMPBIZ` は残りを続けてから、失敗したものの名前を付けたエスケープ・メッセージで終わります。
 
 ## 開発時の注意
 
