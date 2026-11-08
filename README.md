@@ -240,6 +240,27 @@ F3 でメニューを終了します。メニューとマスター保守メニ�
 番号の形式: 受注 `SO-YYYYMMDD-nnnnnn`（登録日と連番。受注入力で作った受注）、出荷 `SHP-n`、請求 `INV-n`、入金 `PAY-n`。
 シーケンスはキャッシュするため、番号が飛ぶことがあります（例 `PAY-1` の次が `PAY-21`）。
 
+## 保存ファイルから復元する（コンパイル不要）
+
+[`savf/O2CDEMO.savf`](savf/O2CDEMO.savf) は、下の「新しい環境へのセットアップ」の手順で作ったライブラリー `O2CDEMO` を `SAVLIB` で保管したものです。
+ソース・ファイル（初期データ入り）・SQL シーケンスとトリガー・ジャーナル・コンパイル済みのプログラムが全部入っているので、復元すればすぐにメニューを使えます。
+
+- IBM i 7.6 で保管しました（`TGTRLS(*CURRENT)`）。**IBM i 7.6 以降**で復元できます。それより前のリリースでは、ソースからセットアップしてください
+- 入っているデータはサンプルのマスター（顧客・商品・倉庫・在庫・コード・為替レート・ユーザー）だけで、受注・請求などの取引はありません
+- ライブラリー名は `O2CDEMO` のまま復元するのがおすすめです（在庫のトリガー・ジャーナルを含めて、この名前で動作を確かめています）
+
+1. `O2CDEMO.savf` を IFS にバイナリーで送る（例: `scp O2CDEMO.savf ユーザー@ホスト:/home/ユーザー/`。ACS の IFS 転送でもよい）
+2. 保存ファイルを作り、IFS のファイルを入れて、ライブラリーを復元する
+   ```
+   CRTSAVF    FILE(QGPL/O2CDEMO)
+   CPYFRMSTMF FROMSTMF('/home/ユーザー/O2CDEMO.savf') +
+                TOMBR('/QSYS.LIB/QGPL.LIB/O2CDEMO.FILE') MBROPT(*REPLACE)
+   RSTLIB     SAVLIB(O2CDEMO) DEV(*SAVF) SAVF(QGPL/O2CDEMO)
+   ```
+3. メニューを呼ぶ: `CALL O2CDEMO/O2CMENU`
+
+保管したユーザー（所有者）が復元先のシステムにない場合、オブジェクトの所有者は `QDFTOWN` になります。必要なら `CHGOBJOWN` で変えてください。
+
 ## 新しい環境へのセットアップ
 
 ライブラリー名を `O2CDEMO` にする例です。別の名前にするときは `O2CDEMO` を置き換えてください。セットアップ用の CL（`CRTFILES` `SETUPJRN` `COMPINIT` `INITDATA` `COMPBIZ`）は、ライブラリー名をパラメーターで受け取ります。
@@ -247,10 +268,10 @@ F3 でメニューを終了します。メニューとマスター保守メニ�
 1. ライブラリーとソースファイルを作り、このリポジトリーのフォルダー（`QRPGLESRC` / `QCLLESRC` / `QDDSSRC` / `QSQLSRC`）のファイルを、同じ名前のソースファイルのメンバーとして置く（メンバー名＝ファイル名、ソースタイプ＝拡張子）
    ```
    CRTLIB     LIB(O2CDEMO)
-   CRTSRCPF   FILE(O2CDEMO/QRPGLESRC) RCDLEN(92) CCSID(1399)
-   CRTSRCPF   FILE(O2CDEMO/QCLLESRC)  RCDLEN(92) CCSID(1399)
-   CRTSRCPF   FILE(O2CDEMO/QDDSSRC)   RCDLEN(92) CCSID(1399)
-   CRTSRCPF   FILE(O2CDEMO/QSQLSRC)   RCDLEN(92) CCSID(1399)
+   CRTSRCPF   FILE(O2CDEMO/QRPGLESRC) RCDLEN(92) IGCDTA(*YES) CCSID(1399)
+   CRTSRCPF   FILE(O2CDEMO/QCLLESRC)  RCDLEN(92) IGCDTA(*YES) CCSID(1399)
+   CRTSRCPF   FILE(O2CDEMO/QDDSSRC)   RCDLEN(92) IGCDTA(*YES) CCSID(1399)
+   CRTSRCPF   FILE(O2CDEMO/QSQLSRC)   RCDLEN(92) IGCDTA(*YES) CCSID(1399)
    ```
 2. データベースを作る — 物理ファイル・論理ファイル・SQL シーケンス・変更履歴のトリガー（`QSQLSRC` の `O2CTRIG`）
    ```

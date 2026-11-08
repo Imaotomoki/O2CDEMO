@@ -20,6 +20,9 @@
                           MSGDTA('ライブラリー名を指定してください') +
                           MSGTYPE(*ESCAPE)
              ENDDO
+/*   DDSのPFILEやRPGのファイルを見つけるためライブラリーリストに追加 */
+             ADDLIBLE   LIB(&LIB)
+             MONMSG     MSGID(CPF2103)
 
              SNDPGMMSG  MSG('初期データ投入を開始しました') +
                           TOPGMQ(*EXT) MSGTYPE(*INFO)
